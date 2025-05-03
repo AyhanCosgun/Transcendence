@@ -10,7 +10,7 @@ var core_1 = require("@babylonjs/core");
 function createCamera(scene) {
     var camera = new core_1.FreeCamera("Camera", new core_1.Vector3(0, 0, -20), scene);
     camera.setTarget(core_1.Vector3.Zero());
-    //camera.rotation.x = Math.PI / 2;
+    camera.rotation.x = Math.PI / -32;
     camera.inputs.clear();
     new core_1.HemisphericLight("light", new core_1.Vector3(1, 1, 0), scene);
     new core_1.HemisphericLight("light", new core_1.Vector3(-1, -1, 0), scene);
@@ -53,7 +53,7 @@ function createGround(scene) {
 }
 // 🎮 Duvarlar
 function createWalls(scene) {
-    var wallSize = { width: 20, height: 0.3, depth: 0.5 };
+    var wallSize = { width: 20, height: 0.3, depth: 10 };
     var bottomWall = core_1.MeshBuilder.CreateBox("bottomWall", wallSize, scene);
     bottomWall.position.x = 0; // Ortalanmış
     bottomWall.position.y = -5 - wallSize.height / 2;

@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.startGameLoop = startGameLoop;
 var ui_1 = require("./ui");
 var main_1 = require("./main");
+var ai_1 = require("./ai");
+var network_1 = require("./network");
 function startGameLoop(engine, scene) {
     engine.runRenderLoop(function () {
         if (ui_1.gameState.matchOver)
@@ -49,6 +51,7 @@ function startGameLoop(engine, scene) {
             var offset = main_1.ball.getBall().position.y - main_1.paddle2.position.y;
             // 🎯 y yönüne ekstra açı ver
             main_1.ball.state.velocity.y += offset * 0.05;
+            // ilk pedal çarpmasından sonra topu çok hızlandır, daha sonra az arttır 
             if (main_1.ball.state.firstPedalHit++)
                 main_1.ball.state.speedIncreaseFactor = 1.18;
             // 🎯 HIZI ARTTIR
@@ -78,5 +81,20 @@ function startGameLoop(engine, scene) {
             main_1.ball.state.velocity = main_1.ball.state.velocity.multiplyByFloats(1.01, 1.01, 1.01);
         }
         scene.render();
+        var moved = false;
+        var upperLimit = (main_1.groundSize.height - main_1.paddleSize.height) / 2;
+        var step = 0.2;
+        var targetY = (0, ai_1.predictBallY)(main_1.ball, main_1.groundSize.width / 2);
+        if (Math.abs(main_1.paddle2.position.y - targetY) >= step) {
+            var nextY = main_1.paddle2.position.y + step * Math.sign(targetY - main_1.paddle2.position.y);
+            if (Math.abs(nextY) <= upperLimit)
+                main_1.paddle2.position.y = nextY;
+            moved = true;
+        }
+        if (moved) {
+            network_1.socket.emit("player-move", {
+                paddlePosition: main_1.paddle2.position.y,
+            });
+        }
     });
 }

@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
     <title>Transcendence Pong</title>
   </head>
   <body>
@@ -23,6 +25,36 @@
           <span id="red-team">P2</span>
         </div>
       </div>
+
+    <div class="card w-128 bg-gray-600">
+      <div data-status="inprogress" class="teams">
+        <span class="team-info team-home">
+          <span class="team-name-info">Team 1</span>
+        </span>
+        <span class="event-scoreboard">
+          <span class="event-score-container">
+            <span class="current-time-container">
+              <span class="event-current-time">
+                <span class="event-clock">85'</span>
+                <span class="current-part">2H</span>
+              </span>
+              <span class="progress-dots" data-progress="1S">
+                <span class="load"></span>
+              </span>
+            </span>
+            <span class="score-container">
+              <span class="score-home">2</span>
+              <span class="custom-sep">-</span>
+              <span class="score-away">4</span>
+            </span>
+          </span>
+        </span>
+        <span class="team-info team-away mx-5">
+          <span class="team-name-info">Team 2</span>
+        </span>
+      </div>
+    </div>
+
       
       <button id="start-button">Maçı Başlat</button>
 

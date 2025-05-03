@@ -6,7 +6,7 @@ export function createCamera(scene: Scene)
 {
   const camera = new FreeCamera("Camera", new Vector3(0,0 , -20), scene);
   camera.setTarget(Vector3.Zero());
-  //camera.rotation.x = Math.PI / 2;
+  camera.rotation.x = Math.PI / -32;
   camera.inputs.clear();
   
   new HemisphericLight("light", new Vector3(1, 1, 0), scene);
@@ -73,7 +73,7 @@ export function createGround(scene: Scene)
 // 🎮 Duvarlar
 export function createWalls(scene: Scene) 
 {
-  const wallSize = { width: 20, height: 0.3, depth: 0.5 };
+  const wallSize = { width: 20, height: 0.3, depth: 10 };
 
   const bottomWall = MeshBuilder.CreateBox("bottomWall", wallSize, scene);
   bottomWall.position.x = 0;  // Ortalanmış

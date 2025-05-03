@@ -1,12 +1,15 @@
 import { Engine, Scene } from "@babylonjs/core";
 import {gameState, scorePoint } from "./ui";
 import { groundSize, ball, paddleSize, paddle1, paddle2  } from "./main";
+import { predictBallY } from "./ai";
+import { socket } from "./network";
 
 export function startGameLoop(engine: Engine, scene: Scene): void
 {
     engine.runRenderLoop(() => {
         if (gameState.matchOver) return;
         if (gameState.setOver) return;
+
       
         // Topu hareket ettir
       ball.getBall().position.addInPlace(ball.state.velocity);
@@ -67,6 +70,7 @@ export function startGameLoop(engine: Engine, scene: Scene): void
         
         // 🎯 y yönüne ekstra açı ver
         ball.state.velocity.y += offset * 0.05;
+        // ilk pedal çarpmasından sonra topu çok hızlandır, daha sonra az arttır 
         if (ball.state.firstPedalHit++)
           ball.state.speedIncreaseFactor = 1.18;
       
@@ -108,8 +112,29 @@ export function startGameLoop(engine: Engine, scene: Scene): void
         {
             ball.state.velocity = ball.state.velocity.multiplyByFloats(1.01, 1.01, 1.01);
         }
+
       
         scene.render();
+
+        let moved = false;
+        const upperLimit = (groundSize.height - paddleSize.height) / 2;
+        const step = 0.2;
+        const targetY = predictBallY(ball, groundSize.width/2);
+        if(Math.abs(paddle2.position.y - targetY) >= step)
+        {
+          const nextY = paddle2.position.y + step * Math.sign(targetY - paddle2.position.y);
+          if (Math.abs(nextY) <= upperLimit)
+            paddle2.position.y = nextY;
+          moved = true;
+        }
+
+        if (moved)
+          {
+            socket.emit("player-move", {
+                paddlePosition: paddle2.position.y,
+            });
+          }
+
       });
   }
   

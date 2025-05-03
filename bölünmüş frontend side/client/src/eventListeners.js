@@ -39,22 +39,21 @@ function initializeEventListeners() {
         }
     });
     // PADDLE 2
-    window.addEventListener("keydown", function (event) {
-        var step = 1;
-        var moved = false;
-        if (event.key === "ArrowUp" && main_1.paddle2.position.y < upperLimit) {
-            main_1.paddle2.position.y += step;
-            moved = true;
-        }
-        else if (event.key === "ArrowDown" && main_1.paddle2.position.y > lowerLimit) {
-            main_1.paddle2.position.y -= step;
-            moved = true;
-        }
-        if (moved) {
-            event.preventDefault();
-            network_1.socket.emit("player-move", {
-                paddlePosition: main_1.paddle2.position.y,
-            });
-        }
-    });
+    // window.addEventListener("keydown", (event) => {
+    //   const step = 1;
+    //   let moved = false;
+    //   if (event.key === "ArrowUp" && paddle2.position.y < upperLimit) {
+    //     paddle2.position.y += step;
+    //     moved = true;
+    //   } else if (event.key === "ArrowDown" && paddle2.position.y > lowerLimit) {
+    //     paddle2.position.y -= step;
+    //     moved = true;
+    //   }
+    //   if (moved) {
+    //     event.preventDefault();
+    //     socket.emit("player-move", {
+    //       paddlePosition: paddle2.position.y,
+    //     });
+    //   }
+    // });
 }
