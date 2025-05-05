@@ -8,9 +8,9 @@ var BallController = /** @class */ (function () {
         this.state = {
             firstSpeedFactor: 0.15,
             airResistanceFactor: 0.998,
-            minimumSpeed: 0.2,
+            minimumSpeed: 0.15,
             radius: 0.25,
-            speedIncreaseFactor: 1.5,
+            speedIncreaseFactor: 1.7,
             firstPedalHit: 0,
             velocity: new core_1.Vector3(0, 0, 0),
         };

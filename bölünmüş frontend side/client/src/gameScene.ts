@@ -1,12 +1,13 @@
 import {FreeCamera, Scene, ArcRotateCamera, HemisphericLight, MeshBuilder, Vector3, Color3,
   StandardMaterial, Engine} from "@babylonjs/core";
+import { groundSize } from "./main";
 
 // 🎮 Kamera ve ışık
 export function createCamera(scene: Scene)
 {
   const camera = new FreeCamera("Camera", new Vector3(0,0 , -20), scene);
   camera.setTarget(Vector3.Zero());
-  camera.rotation.x = Math.PI / -32;
+ // camera.rotation.x = Math.PI / -32;
   camera.inputs.clear();
   
   new HemisphericLight("light", new Vector3(1, 1, 0), scene);
@@ -28,17 +29,31 @@ export function createScene()
 
 
 
+// 🎮 Zemin
+export function createGround(scene: Scene)
+{
+  const width = 20;
+  const groundSize = { width: width, height: width*(152.5)/274 };
+  const ground = MeshBuilder.CreatePlane("ground", groundSize, scene);
+  const groundMaterial = new StandardMaterial("groundMaterial", scene);
+  groundMaterial.diffuseColor = new Color3(0.1, 0.1, 0.1); // Koyu gri
+  ground.material = groundMaterial;
+
+  return {ground, groundSize};
+}
+
+
 
 // 🎮 Paddle'lar ve top
 export function createPaddles(scene: Scene)
 {
-  const paddleSize = { width: 0.2, height: 3, depth: 0.5 };
+  const paddleSize = { width: 0.2, height: groundSize.height*(0.3), depth: 0.5 };
   const paddle1 = MeshBuilder.CreateBox("paddle1", paddleSize, scene);
-  paddle1.position.x = -10 + paddleSize.width;
+  paddle1.position.x = -groundSize.width/2 + paddleSize.width;
   paddle1.position.y = 0;
 
   const paddle2 = MeshBuilder.CreateBox("paddle2", paddleSize, scene);
-  paddle2.position.x = 10 - paddleSize.width;
+  paddle2.position.x = groundSize.width/2 - paddleSize.width;
   paddle2.position.y = 0;
 
   // Paddle material
@@ -57,27 +72,14 @@ export function createPaddles(scene: Scene)
 
 
 
-
-// 🎮 Zemin
-export function createGround(scene: Scene)
-{
-  const groundSize = { width: 20, height: 10 };
-  const ground = MeshBuilder.CreatePlane("ground", groundSize, scene);
-  const groundMaterial = new StandardMaterial("groundMaterial", scene);
-  groundMaterial.diffuseColor = new Color3(0.1, 0.1, 0.1); // Koyu gri
-  ground.material = groundMaterial;
-
-  return {ground, groundSize};
-}
-
 // 🎮 Duvarlar
 export function createWalls(scene: Scene) 
 {
-  const wallSize = { width: 20, height: 0.3, depth: 10 };
+  const wallSize = { width: groundSize.width, height: 0.3, depth: 1 };
 
   const bottomWall = MeshBuilder.CreateBox("bottomWall", wallSize, scene);
   bottomWall.position.x = 0;  // Ortalanmış
-  bottomWall.position.y = -5 - wallSize.height / 2;
+  bottomWall.position.y = -groundSize.height/2 - wallSize.height / 2;
 
   const bottomWallMaterial = new StandardMaterial("bottomWallMaterial", scene);
   bottomWallMaterial.diffuseColor = new Color3(0.1, 0.5, 0.1); // yeşil tonlu duvar
@@ -85,7 +87,7 @@ export function createWalls(scene: Scene)
 
   const topWall = MeshBuilder.CreateBox("topWall", wallSize, scene);
   topWall.position.x = 0;
-  topWall.position.y = 5 + wallSize.height / 2;
+  topWall.position.y = groundSize.height/2 + wallSize.height / 2;
 
   const topWallMaterial = bottomWallMaterial.clone("topWallMaterial");
   topWall.material = topWallMaterial;

@@ -70,6 +70,7 @@ exports.gameState = {
     sets: { player1: 0, player2: 0 },
     matchOver: false,
     setOver: false,
+    isPaused: false,
 };
 function updateScoreBoard() {
     scoreTable.innerText = "".concat(exports.gameState.points.player1, "  :  ").concat(exports.gameState.points.player2);
@@ -87,20 +88,22 @@ function updateSetBoard() {
 // OYUN FONKSİYONLARI
 function resetBall(lastScorer) {
     main_1.ball.state.firstPedalHit = 0;
-    main_1.ball.state.speedIncreaseFactor = 1.5;
+    main_1.ball.state.speedIncreaseFactor = 1.7;
+    main_1.ball.state.minimumSpeed = main_1.ball.state.firstSpeedFactor;
     // 🎯 Önce topu durdur
     main_1.ball.state.velocity = new core_1.Vector3(0, 0, 0);
     // 🎯 Topu ortada sabitle
     main_1.ball.getBall().position = new core_1.Vector3(0, Math.random() * 8 - 4, 0);
     // 🎯 Belirli bir süre bekle ( 1 saniye)
     setTimeout(function () {
-        var angle = lastScorer == 'player1' ? (Math.random() * 2 - 1) * Math.PI / 4 : Math.PI - (Math.random() * 2 - 1) * Math.PI / 4;
+        var angle = lastScorer == 'player1' ? (Math.random() * 2 - 1) * Math.PI / 6 : Math.PI - (Math.random() * 2 - 1) * Math.PI / 6;
         // 2 saniye sonra yeni rastgele bir hız ver
         main_1.ball.state.velocity = new core_1.Vector3(Math.cos(angle) * main_1.ball.state.firstSpeedFactor, Math.sin(angle) * main_1.ball.state.firstSpeedFactor, 0);
     }, 1000); // 1000ms = 1 saniye
 }
 function startGame() {
     exports.gameState.matchOver = false;
+    exports.gameState.isPaused = false;
     resetScores();
     resetSets();
     Math.random() <= 0.5 ? resetBall('player1') : resetBall('player2');
@@ -146,7 +149,7 @@ function showEndMessage(message) {
     exports.endMsg.style.display = "flex";
     if (main_2.startButton) {
         main_2.startButton.style.display = "inline-block";
-        main_2.startButton.textContent = "Yeni Maç Başlat";
+        main_2.startButton.textContent = "Yeni Maça Başla";
     }
 }
 function scorePoint(winner) {

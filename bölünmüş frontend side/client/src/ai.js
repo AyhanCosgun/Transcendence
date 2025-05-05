@@ -29,12 +29,3 @@ function predictBallY(ball, paddleX) {
     }
     return y;
 }
-/**
- * Bu fonksiyon AI paddle'ının Y koordinatını hedef konuma doğru hareket ettirir.
- */
-//   export function moveAIPaddle(currentY: number, targetY: number, speed: number): number {
-//     if (Math.abs(currentY - targetY) <= speed) {
-//       return targetY; // Hedefe ulaştı
-//     }
-//     return currentY + speed * Math.sign(targetY - currentY);
-//   }

@@ -1,12 +1,13 @@
-import { startGame, endMsg } from "./ui";
+import { startGame, endMsg, gameState } from "./ui";
 import { groundSize, paddle1, paddle2, paddleSize } from "./main";
 import { socket } from "./network";
 
 
+const startButton = document.getElementById("start-button")!;
+
 export function createStartButton()
 {
    // START BUTTON
-   const startButton = document.getElementById("start-button")!;
    startButton.addEventListener("click", () => {
      endMsg.style.display = "none";
      startButton.style.display = "none";
@@ -64,8 +65,44 @@ export function initializeEventListeners() {
   // });
 
 
+  const resumeButton = document.getElementById("resume-button") as HTMLButtonElement;
+  const newmatchButton = document.getElementById("newmatch-button") as HTMLButtonElement;
+ 
+  document.addEventListener("keydown", (event) => {
+    if (event.code === "Space" && startButton.style.display == "none") {
+      gameState.isPaused = !gameState.isPaused;
 
+      if (gameState.isPaused) {
+        // Duraklatıldığında "devam et" butonunu göster
+        resumeButton.style.display = "block";
+        newmatchButton.style.display = "block";
+      } else {
+        // Devam edildiğinde butonu gizle
+        resumeButton.style.display = "none";
+        newmatchButton.style.display = "none";
+      }
+
+    }
+  });
+
+
+  resumeButton?.addEventListener("click", () => {
+    gameState.isPaused = false;
+    resumeButton.style.display = "none";
+    newmatchButton.style.display = "none";
+  });
+
+
+
+  newmatchButton?.addEventListener("click", () => {
+    resumeButton.style.display = "none";
+    newmatchButton.style.display = "none";
+    startGame();
+  });
+  
 
 
 }
+
+
 

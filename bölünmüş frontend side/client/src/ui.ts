@@ -31,6 +31,7 @@ export interface GameState {
   sets: { player1: number; player2: number };
   matchOver: boolean;
   setOver: boolean;
+  isPaused: boolean;
 }
 
 
@@ -39,6 +40,7 @@ export const gameState: GameState = {
   sets: { player1: 0, player2: 0 },
   matchOver: false,
   setOver: false,
+  isPaused: false,
 };
 
 
@@ -67,7 +69,8 @@ export function updateSetBoard()
 export function resetBall(lastScorer: Player)
 {
   ball.state.firstPedalHit = 0;
-  ball.state.speedIncreaseFactor = 1.5;
+  ball.state.speedIncreaseFactor = 1.7;
+  ball.state.minimumSpeed = ball.state.firstSpeedFactor;
   // 🎯 Önce topu durdur
   ball.state.velocity = new Vector3(0, 0, 0);
 
@@ -78,7 +81,7 @@ export function resetBall(lastScorer: Player)
   // 🎯 Belirli bir süre bekle ( 1 saniye)
   setTimeout(() => {
 
-    const angle = lastScorer == 'player1' ? (Math.random()*2-1)*Math.PI/4 : Math.PI - (Math.random()*2-1)*Math.PI/4;
+    const angle = lastScorer == 'player1' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
     // 2 saniye sonra yeni rastgele bir hız ver
     ball.state.velocity = new Vector3( Math.cos(angle)*ball.state.firstSpeedFactor,
     Math.sin(angle)*ball.state.firstSpeedFactor,
@@ -90,6 +93,7 @@ export function resetBall(lastScorer: Player)
 export function startGame()
 {
   gameState.matchOver = false;
+  gameState.isPaused = false;
   resetScores();
   resetSets();
   Math.random() <= 0.5  ? resetBall('player1') : resetBall('player2');
@@ -143,7 +147,7 @@ export function showEndMessage(message: string) {
   endMsg.style.display = "flex";
   if (startButton) {
     startButton.style.display = "inline-block";
-    startButton.textContent = "Yeni Maç Başlat";
+    startButton.textContent = "Yeni Maça Başla";
   }
 }
 

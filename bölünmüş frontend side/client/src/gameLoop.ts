@@ -9,6 +9,29 @@ export function startGameLoop(engine: Engine, scene: Scene): void
     engine.runRenderLoop(() => {
         if (gameState.matchOver) return;
         if (gameState.setOver) return;
+        if (gameState.isPaused) return;
+
+
+//Ai pedal hareketi
+        let moved = false;
+        const upperLimit = (groundSize.height - paddleSize.height) / 2;
+        const step = 0.2;
+        const targetY = predictBallY(ball, groundSize.width/2);
+        if(Math.abs(paddle2.position.y - targetY) >= step)
+        {
+          const nextY = paddle2.position.y + step * Math.sign(targetY - paddle2.position.y);
+          if (Math.abs(nextY) <= upperLimit)
+            paddle2.position.y = nextY;
+          moved = true;
+        }
+
+        if (moved)
+          {
+            socket.emit("player-move", {
+                paddlePosition: paddle2.position.y,
+            });
+          }
+
 
       
         // Topu hareket ettir
@@ -41,7 +64,10 @@ export function startGameLoop(engine: Engine, scene: Scene): void
         // 🎯 y yönüne ekstra açı ver
         ball.state.velocity.y += offset * 0.05;
         if (ball.state.firstPedalHit++)
-          ball.state.speedIncreaseFactor = 1.2;
+          {
+            ball.state.speedIncreaseFactor = 1.2;
+            ball.state.minimumSpeed = 0.2;
+          }
       
           // 🎯 HIZI ARTTIR
           ball.state.velocity.x *= ball.state.speedIncreaseFactor;
@@ -72,7 +98,10 @@ export function startGameLoop(engine: Engine, scene: Scene): void
         ball.state.velocity.y += offset * 0.05;
         // ilk pedal çarpmasından sonra topu çok hızlandır, daha sonra az arttır 
         if (ball.state.firstPedalHit++)
-          ball.state.speedIncreaseFactor = 1.18;
+        {
+          ball.state.speedIncreaseFactor = 1.2;
+          ball.state.minimumSpeed = 0.2;
+        }
       
           // 🎯 HIZI ARTTIR
           ball.state.velocity.x *= ball.state.speedIncreaseFactor;
@@ -110,30 +139,13 @@ export function startGameLoop(engine: Engine, scene: Scene): void
       // 🎯 Hız minimumdan küçük olmasın, top durmasın
       if (ball.state.velocity.length() < ball.state.minimumSpeed)
         {
-            ball.state.velocity = ball.state.velocity.multiplyByFloats(1.01, 1.01, 1.01);
+            ball.state.velocity = ball.state.velocity.multiplyByFloats(1.02, 1.02, 1.02);
         }
 
       
         scene.render();
 
-        let moved = false;
-        const upperLimit = (groundSize.height - paddleSize.height) / 2;
-        const step = 0.2;
-        const targetY = predictBallY(ball, groundSize.width/2);
-        if(Math.abs(paddle2.position.y - targetY) >= step)
-        {
-          const nextY = paddle2.position.y + step * Math.sign(targetY - paddle2.position.y);
-          if (Math.abs(nextY) <= upperLimit)
-            paddle2.position.y = nextY;
-          moved = true;
-        }
-
-        if (moved)
-          {
-            socket.emit("player-move", {
-                paddlePosition: paddle2.position.y,
-            });
-          }
+       
 
       });
   }

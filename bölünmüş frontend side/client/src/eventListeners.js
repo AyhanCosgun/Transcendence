@@ -5,9 +5,9 @@ exports.initializeEventListeners = initializeEventListeners;
 var ui_1 = require("./ui");
 var main_1 = require("./main");
 var network_1 = require("./network");
+var startButton = document.getElementById("start-button");
 function createStartButton() {
     // START BUTTON
-    var startButton = document.getElementById("start-button");
     startButton.addEventListener("click", function () {
         ui_1.endMsg.style.display = "none";
         startButton.style.display = "none";
@@ -56,4 +56,31 @@ function initializeEventListeners() {
     //     });
     //   }
     // });
+    var resumeButton = document.getElementById("resume-button");
+    var newmatchButton = document.getElementById("newmatch-button");
+    document.addEventListener("keydown", function (event) {
+        if (event.code === "Space" && startButton.style.display == "none") {
+            ui_1.gameState.isPaused = !ui_1.gameState.isPaused;
+            if (ui_1.gameState.isPaused) {
+                // Duraklatıldığında "devam et" butonunu göster
+                resumeButton.style.display = "block";
+                newmatchButton.style.display = "block";
+            }
+            else {
+                // Devam edildiğinde butonu gizle
+                resumeButton.style.display = "none";
+                newmatchButton.style.display = "none";
+            }
+        }
+    });
+    resumeButton === null || resumeButton === void 0 ? void 0 : resumeButton.addEventListener("click", function () {
+        ui_1.gameState.isPaused = false;
+        resumeButton.style.display = "none";
+        newmatchButton.style.display = "none";
+    });
+    newmatchButton === null || newmatchButton === void 0 ? void 0 : newmatchButton.addEventListener("click", function () {
+        resumeButton.style.display = "none";
+        newmatchButton.style.display = "none";
+        (0, ui_1.startGame)();
+    });
 }

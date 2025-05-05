@@ -5,7 +5,7 @@ interface BallState
 {
   readonly firstSpeedFactor: number;
   readonly airResistanceFactor: number;
-  readonly minimumSpeed: number;
+  minimumSpeed: number;
   readonly radius: number;
   speedIncreaseFactor: number;
   firstPedalHit: number;
@@ -21,9 +21,9 @@ export class BallController
     this.state = {
       firstSpeedFactor: 0.15,
       airResistanceFactor: 0.998,
-      minimumSpeed: 0.2,
+      minimumSpeed: 0.15,
       radius: 0.25,
-      speedIncreaseFactor: 1.5,
+      speedIncreaseFactor: 1.7,
       firstPedalHit: 0,
       velocity: new Vector3(0, 0, 0),
     };

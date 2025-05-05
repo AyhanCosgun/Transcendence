@@ -1,6 +1,6 @@
 #scoreboard {
   position: absolute;
-  top: 5%;
+  top: 3%;
   left: 50%;
   transform: translateX(-50%);
   
@@ -23,7 +23,7 @@
 
 #setboard {
   position: absolute;
-  bottom: 5%;
+  bottom: 3%;
   left: 50%;
   transform: translateX(-50%);
   
@@ -83,6 +83,45 @@ padding: 0.2vw 1vw;
   z-index: 20;
 }
 
+
+
+#resume-button
+{
+  display: none;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.2vw 2.8vw;
+  font-size: 1.5vw;
+  background-color: #1d288d;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 30;
+}
+
+
+#newmatch-button
+{
+  display: none;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.2vw 2.8vw;
+  font-size: 1.5vw;
+  background-color: #1d288d;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 30;
+}
+
+
+
 #set-toast {
   position: absolute;
   bottom: 20%;
@@ -110,6 +149,15 @@ padding: 0.2vw 1vw;
   border-radius: 12px;
   display: none;
 }
+
+
+
+
+
+
+
+
+
 
 
 /* From Uiverse.io by sofiapetushok */ 
@@ -303,3 +351,5 @@ padding: 0.2vw 1vw;
   color: #eee;
   margin-right: 10px;
 }
+
+
