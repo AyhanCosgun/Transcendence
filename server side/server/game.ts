@@ -1,7 +1,81 @@
 // server/game.ts
 import { Server, Socket } from "socket.io";
 
-export class Game {
+const UNIT = 40;
+
+interface Position
+{
+  x : number;
+  y : number;
+}
+
+
+interface Ball
+{
+  readonly firstSpeedFactor: number;
+  readonly airResistanceFactor: number;
+  minimumSpeed: number;
+  readonly radius: number;
+  speedIncreaseFactor: number;
+  firstPedalHit: number;
+  position: Position;
+  velocity: Position;
+}
+
+
+interface Paddle
+{
+  readonly width: number;
+  readonly height: number;
+  position : Position;
+}
+
+
+
+
+export class Game
+{
+  private ball: Ball;
+  private paddle1: Paddle;
+  private paddle2: Paddle;
+  private ground: {width: number; height : number};
+  points: { player1: number; player2: number };
+  sets: { player1: number; player2: number };
+  matchOver: boolean;
+  setOver: boolean;
+  isPaused: boolean;
+  constructor()
+  {
+    this.ball = 
+    {
+        firstSpeedFactor: 0.15*UNIT,
+        airResistanceFactor: 0.998,
+        minimumSpeed: 0.15*UNIT,
+        radius: 0.25*UNIT,
+        speedIncreaseFactor: 1.7,
+        firstPedalHit: 0,
+        position : { x:0 , y:0},
+        velocity : {x:0.14*UNIT, y:0.15*UNIT},
+    };
+    this.paddle1 = 
+    {
+      width:0.2*UNIT ,
+      height:,
+      position: {}
+    };
+    this.velocity = {x:2, y:2};
+  }
+
+  // Gerekirse ek işlevsellik eklenebilir (örneğin: updatePosition, applyResistance, vs.)
+}
+
+
+
+
+
+
+
+export class Gamennnn {
   private ball = { x: 0, y: 0, vx: 2, vy: 2, radius: 5 };
   private paddle1Y = 250;
   private paddle2Y = 250;

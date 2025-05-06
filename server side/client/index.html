@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <title>Transcendence Pong</title>
+  </head>
+  <body>
+  
+     <div id="game-wrapper" style="position: relative; width: 100%; height: 100%;">
+      <canvas id="game-canvas" style="position: relative; width: 90%; left: 5%;"></canvas>
+      <div id="scoreboard">
+        <span id="blue-team">P 1</span> <span id="score-table">0  :  0</span> <span id="red-team">P 2
+      </div>
+
+      <div id="setboard">
+        <div class="row" id="set-title">
+          <span id="setler">SETLER</span>
+        </div>
+        <div class="row" id="set-skor">
+          <span id="blue-team">P1</span>
+          <span id="set-table">0  :  0</span>
+          <span id="red-team">P2</span>
+        </div>
+      </div>
+
+    <!-- <div class="card w-128 bg-gray-600">
+      <div data-status="inprogress" class="teams">
+        <span class="team-info team-home">
+          <span class="team-name-info">Team 1</span>
+        </span>
+        <span class="event-scoreboard">
+          <span class="event-score-container">
+            <span class="current-time-container">
+              <span class="event-current-time">
+                <span class="event-clock">85'</span>
+                <span class="current-part">2H</span>
+              </span>
+              <span class="progress-dots" data-progress="1S">
+                <span class="load"></span>
+              </span>
+            </span>
+            <span class="score-container">
+              <span class="score-home">2</span>
+              <span class="custom-sep">-</span>
+              <span class="score-away">4</span>
+            </span>
+          </span>
+        </span>
+        <span class="team-info team-away mx-5">
+          <span class="team-name-info">Team 2</span>
+        </span>
+      </div>
+    </div> -->
+
+      
+      <button id="start-button">Maçı Başlat</button>
+
+
+<button id="resume-button" >Maça Devam Et</button>
+
+<button id="newmatch-button" >Yeni Maça Başla</button>
+
+
+      <div id="set-toast"></div>
+      <div id="end-message"></div>
+
+
+      <!-- <div id="status"></div>
+<div id="result"></div> -->
+
+
+     </div>
+    
+    
+     
+
+    <script type="module" src="./src/main.ts"></script>
+    <link rel="stylesheet" href="./style.css">
+  </body>
+</html>
