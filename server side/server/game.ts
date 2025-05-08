@@ -1,7 +1,12 @@
 // server/game.ts
 import { Server, Socket } from "socket.io";
+import { predictBallY } from "./aiPlayer";
 
 const UNIT = 40;
+
+
+type Player = 'player1' | 'player2';
+
 
 interface Position
 {
@@ -10,7 +15,7 @@ interface Position
 }
 
 
-interface Ball
+export interface Ball
 {
   readonly firstSpeedFactor: number;
   readonly airResistanceFactor: number;
@@ -39,12 +44,19 @@ export class Game
   private paddle1: Paddle;
   private paddle2: Paddle;
   private ground: {width: number; height : number};
-  points: { player1: number; player2: number };
-  sets: { player1: number; player2: number };
-  matchOver: boolean;
-  setOver: boolean;
-  isPaused: boolean;
-  constructor()
+  private points: { player1: number, player2: number };
+  private sets: { player1: number, player2: number };
+  private groundWidth = 20*UNIT;
+  private matchOver = true;
+  private setOver = true;
+  private isPaused = true;
+  private aiPlayer = false;
+
+  private roomId: string;
+  private io: Server;
+  private interval: NodeJS.Timeout;
+
+  constructor( private player1: Socket, private player2: Socket, io: Server, roomId: string)
   {
     this.ball = 
     {
@@ -57,125 +69,309 @@ export class Game
         position : { x:0 , y:0},
         velocity : {x:0.14*UNIT, y:0.15*UNIT},
     };
+    this.ground =
+    {
+      width: this.groundWidth,
+      height: this.groundWidth*(152.5)/274,
+    };
+
     this.paddle1 = 
     {
       width:0.2*UNIT ,
-      height:,
-      position: {}
+      height: this.ground.height*(0.3),
+      position: {
+        x : -this.groundWidth/2 + this.paddle1.width,
+        y : 0 },
     };
-    this.velocity = {x:2, y:2};
-  }
 
-  // Gerekirse ek işlevsellik eklenebilir (örneğin: updatePosition, applyResistance, vs.)
-}
+    this.paddle2 = 
+    {
+      width:0.2*UNIT ,
+      height: this.ground.height*(0.3),
+      position: {
+        x : this.groundWidth/2 - this.paddle1.width,
+        y : 0 },
+    };
 
 
+    this.points = { player1: 0, player2: 0 };
+    this.sets = { player1: 0, player2: 0 };
 
-
-
-
-
-export class Gamennnn {
-  private ball = { x: 0, y: 0, vx: 2, vy: 2, radius: 5 };
-  private paddle1Y = 250;
-  private paddle2Y = 250;
-  private readonly paddleHeight = 100;
-  private readonly canvasHeight = 600;
-  private readonly canvasWidth = 800;
-  private score = { player1: 0, player2: 0 };
-
-  private roomId: string;
-  private io: Server;
-  private interval: NodeJS.Timer;
-
-  constructor(
-    private player1: Socket,
-    private player2: Socket,
-    io: Server,
-    roomId: string
-  ) {
     this.io = io;
     this.roomId = roomId;
+    this.exportGameConstants();
     this.listenForMoves();
   }
 
-  public start() {
+
+  private exportGameConstants()
+  {
+     const gameConstants = 
+     {
+       groundWidth: this.ground.width,
+       groundHeight: this.ground.height,
+       ballRadius: this.ball.radius,
+       paddleWidth: this.paddle1.width,
+       paddleHeight: this.paddle1.height
+      }
+
+      this.io.to(this.roomId).emit("gameConstants", gameConstants);
+  }
+
+
+
+  public startGameLoop(aiPlayer : boolean) {
+    this.matchOver = false;
+    this.setOver = false;
+    this.isPaused = false;
+    this.aiPlayer = aiPlayer;
+
+    const gameState = 
+    {
+      matchOver: this.matchOver,
+      setOver: this.setOver,
+      isPaused: this.isPaused,
+      aiPlayer : this.aiPlayer
+     }
+
+     this.io.to(this.roomId).emit("gameState", gameState);
+
     this.interval = setInterval(() => this.update(), 1000 / 60); // 60 FPS
   }
 
   private listenForMoves() {
     this.player1.on("move", (data) => {
-      this.paddle1Y = data.y;
+      this.paddle1.position.y = data.y;
     });
 
     this.player2.on("move", (data) => {
-      this.paddle2Y = data.y;
+      this.paddle2.position.y = data.y;
     });
   }
 
-  private update() {
-    const b = this.ball;
+
+
+  private startNextSet()
+  {
+    this.setOver = true;
+  
+      setTimeout(() => {
+        this.setOver = false;
+      }, 3000);
+  }
+
+
+
+  private resetBall(lastScorer: "player1" | "player2")
+  {
+    this.ball.firstPedalHit = 0;
+    this.ball.speedIncreaseFactor = 1.7*UNIT;
+    this.ball.minimumSpeed = this.ball.firstSpeedFactor;
+    // 🎯 Önce topu durdur
+    this.ball.velocity = {x:0, y:0};
+  
+    // 🎯 Topu ortada sabitle
+    this.ball.position = {x:0, y: Math.random()*(0.8*this.ground.height)-0.4*this.ground.height};
+    
+  
+    // 🎯 Belirli bir süre bekle ( 1 saniye)
+    setTimeout(() => {
+  
+      const angle = lastScorer == 'player1' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
+      // 2 saniye sonra yeni rastgele bir hız ver
+      this.ball.velocity = {x: Math.cos(angle)*this.ball.firstSpeedFactor, y: Math.sin(angle)*this.ball.firstSpeedFactor};
+  
+    }, 1000); // 1000ms = 1 saniye
+  }
+
+
+   private scorePoint(winner: Player)
+  {
+    if (this.matchOver) return;
+  
+    this.points[winner]++;
+  
+   // updateScoreBoard();
+  
+    const p1 = this.points.player1;
+    const p2 = this.points.player2;
+  
+    // Kontrol: Set bitti mi?
+    if ((p1 >= 11 || p2 >= 11) && Math.abs(p1 - p2) >= 2)
+      {
+        if (p1 > p2) {
+        this.sets.player1++;
+      } else {
+        this.sets.player2++;      
+      }
+  
+      //updateSetBoard();
+      const matchControl = (this.sets.player1 === 3 || this.sets.player2 === 3);
+      if (!matchControl)
+          this.startNextSet();
+            
+      this.resetBall(winner);
+  
+      // Kontrol: Maç bitti mi?
+      if (matchControl)
+        this.matchOver = true;
+     }
+    else   //set bitmedi
+    {
+      this.resetBall(winner);
+    }
+  }
+
+  private update()
+  {
+    if (this.matchOver) return;
+    if (this.setOver) return;
+    if (this.isPaused) return;
+
+
+//Ai pedal hareketi
+    if (this.aiPlayer)
+      {
+        const upperLimit = (this.ground.height - this.paddle1.height) / 2;
+        const step = 0.2*UNIT;
+        const targetY = predictBallY(this.ball, this.ground.width/2, this.paddle2.height);
+        if(Math.abs(this.paddle2.position.y - targetY) >= step)
+        {
+          const nextY = this.paddle2.position.y + step * Math.sign(targetY - this.paddle2.position.y);
+          if (Math.abs(nextY) <= upperLimit)
+            this.paddle2.position.y = nextY;
+        }
+      }
+
+       
 
     // Top hareketi
-    b.x += b.vx;
-    b.y += b.vy;
+    this.ball.position.x += this.ball.velocity.x;
+    this.ball.position.y += this.ball.velocity.y;
 
-    // Duvarlara çarpma
-    if (b.y <= 0 || b.y + b.radius >= this.canvasHeight) {
-      b.vy *= -1;
-    }
 
-    // Paddle çarpışması
-    const paddle1Bounds = { x: 10, y: this.paddle1Y, w: 10, h: this.paddleHeight };
-    const paddle2Bounds = { x: this.canvasWidth - 20, y: this.paddle2Y, w: 10, h: this.paddleHeight };
+    // 🎯 Duvar Çarpışması
+    if (((this.ball.position.y > (this.ground.height/2 - this.ball.radius) && this.ball.velocity.y > 0)
+      || (this.ball.position.y < -(this.ground.height/2 - this.ball.radius) && this.ball.velocity.y < 0))
+      && Math.abs(this.ball.position.x) <= this.ground.width/2 + this.ball.radius) 
+      {
+         this.ball.velocity.y *= -1; 
+      }
+    
+    
+    
+    // 🎯 Paddle Çarpışması
+    const paddleXThreshold = this.ball.radius + this.paddle1.width;  // çarpışma hassasiyeti
+    const paddleYThreshold = (this.paddle1.height + this.ball.radius)/2;  // paddle genişliğine göre
+    
+    
+    // Paddle1 (Aşağıdaki oyuncu)
+    if (Math.abs(this.ball.position.x - this.paddle1.position.x) < paddleXThreshold && this.ball.velocity.x < 0 &&
+      Math.abs(this.ball.position.y - this.paddle1.position.y) < paddleYThreshold && this.ball.position.x > this.paddle1.position.x)
+      {
+        this.ball.velocity.x *= -1; 
+    
+      // 🎯 Nereden çarptı?
+      const offset = this.ball.position.y - this.paddle1.position.y;
+      
+      // 🎯 y yönüne ekstra açı ver
+      this.ball.velocity.y += offset * 0.05;
+      if (this.ball.firstPedalHit++)
+        {
+          this.ball.speedIncreaseFactor = 1.2;
+          this.ball.minimumSpeed = 0.2;
+        }
+    
+        // 🎯 HIZI ARTTIR
+        this.ball.velocity.x *= this.ball.speedIncreaseFactor;
+        this.ball.velocity.y *= this.ball.speedIncreaseFactor;
+    }
+    
+    // pedalın köşesinden sektir
+    if (Math.abs(this.ball.position.x - this.paddle1.position.x) < paddleXThreshold && this.ball.velocity.x < 0
+      && Math.abs(this.ball.position.y - this.paddle1.position.y) >= paddleYThreshold
+      && Math.abs(this.ball.position.y - this.paddle1.position.y) <= (this.paddle1.height/2 + this.ball.radius)
+      && this.ball.position.x > this.paddle1.position.x
+      && (this.ball.position.y - this.paddle1.position.y) * this.ball.velocity.y < 0 )
+      {
+        this.ball.velocity.y *= -1;
+      }
+    
+    
+    // Paddle2 (Yukarıdaki oyuncu)
+    if (
+      Math.abs(this.ball.position.x - this.paddle2.position.x) < paddleXThreshold && this.ball.velocity.x > 0 &&
+      Math.abs(this.ball.position.y - this.paddle2.position.y) < paddleYThreshold && this.ball.position.x < this.paddle2.position.x 
+    ) {
+      this.ball.velocity.x *= -1;
+    
+      const offset = this.ball.position.y - this.paddle2.position.y;
+      
+      // 🎯 y yönüne ekstra açı ver
+      this.ball.velocity.y += offset * 0.05;
+      // ilk pedal çarpmasından sonra topu çok hızlandır, daha sonra az arttır 
+      if (this.ball.firstPedalHit++)
+      {
+        this.ball.speedIncreaseFactor = 1.2;
+        this.ball.minimumSpeed = 0.2*UNIT;
+      }
+    
+        // 🎯 HIZI ARTTIR
+        this.ball.velocity.x *= this.ball.speedIncreaseFactor;
+        this.ball.velocity.y *= this.ball.speedIncreaseFactor;
+    }
+    
+    
+    // pedalın köşesinden sektir
+    if (Math.abs(this.ball.position.x - this.paddle2.position.x) < paddleXThreshold && this.ball.velocity.x > 0
+      && Math.abs(this.ball.position.y - this.paddle2.position.y) >= paddleYThreshold
+      && Math.abs(this.ball.position.y - this.paddle2.position.y) <= (this.paddle1.height/2 + this.ball.radius)
+      && this.ball.position.x < this.paddle2.position.x
+      && (this.ball.position.y - this.paddle2.position.y) * this.ball.velocity.y < 0 )
+      {
+        this.ball.velocity.y *= -1;
+      }
 
-    if (this.collides(b, paddle1Bounds)) {
-      b.vx *= -1;
-      b.x = paddle1Bounds.x + paddle1Bounds.w;
-    }
-    if (this.collides(b, paddle2Bounds)) {
-      b.vx *= -1;
-      b.x = paddle2Bounds.x - b.radius;
-    }
 
-    // Skor
-    if (b.x < 0) {
-      this.score.player2++;
-      this.resetBall("player2");
-    } else if (b.x > this.canvasWidth) {
-      this.score.player1++;
-      this.resetBall("player1");
-    }
+
+      // 🎯 Skor kontrolü
+      if (this.ball.position.x > this.ground.width/2 + 5)
+        {
+          this.scorePoint('player1');
+        }
+      else if (this.ball.position.x < -this.ground.width/2 - 5)
+        {
+          this.scorePoint('player2');
+        }
+      
+      
+      
+      // 🎯 HAVA DİRENCİ UYGULA // her bir frame için hızları biraz azalt
+      this.ball.velocity.x *=this.ball. airResistanceFactor;
+      this.ball.velocity.y *=this.ball. airResistanceFactor;
+      
+      // 🎯 Hız minimumdan küçük olmasın, top durmasın
+      if (Math.sqrt(Math.pow(this.ball.velocity.x, 2) + Math.pow(this.ball.velocity.y, 2) ) < this.ball.minimumSpeed)
+        {
+            this.ball.velocity.x *= 1.02;
+            this.ball.velocity.y *= 1.02;
+        }
+
 
     // Pozisyonları yayınla
     this.io.to(this.roomId).emit("ballUpdate", {
-      x: b.x,
-      y: b.y,
-      score: this.score
+      bp: { x: this.ball.position.x / UNIT, y : this.ball.position.y / UNIT},
+      bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
+      score: this.points,
+      sets: this.sets,
     });
 
     this.io.to(this.roomId).emit("paddleUpdate", {
-      p1: this.paddle1Y,
-      p2: this.paddle2Y
+      p1: this.paddle1.position.y,
+      p2: this.paddle2.position.y
     });
   }
 
-  private resetBall(lastScorer: "player1" | "player2") {
-    this.ball.x = this.canvasWidth / 2;
-    this.ball.y = this.canvasHeight / 2;
-    const direction = lastScorer === "player1" ? -1 : 1;
-    this.ball.vx = 2 * direction;
-    this.ball.vy = 2;
-  }
-
-  private collides(ball: typeof this.ball, rect: { x: number; y: number; w: number; h: number }) {
-    return (
-      ball.x < rect.x + rect.w &&
-      ball.x + ball.radius > rect.x &&
-      ball.y < rect.y + rect.h &&
-      ball.y + ball.radius > rect.y
-    );
-  }
 }
 
 
