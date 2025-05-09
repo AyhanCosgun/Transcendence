@@ -1,6 +1,6 @@
 // server/game.ts
 import { Server, Socket } from "socket.io";
-import { predictBallY } from "./aiPlayer";
+import { predictBallY, aiPaddleMovement } from "./aiPlayer";
 
 const UNIT = 40;
 
@@ -28,7 +28,7 @@ export interface Ball
 }
 
 
-interface Paddle
+export interface Paddle
 {
   readonly width: number;
   readonly height: number;
@@ -51,12 +51,13 @@ export class Game
   private setOver = true;
   private isPaused = true;
   private aiPlayer = false;
+  private level : String;
 
   private roomId: string;
   private io: Server;
   private interval: NodeJS.Timeout;
 
-  constructor( private player1: Socket, private player2: Socket, io: Server, roomId: string)
+  constructor( private player1: Socket, private player2: Socket, io: Server, roomId: string, level?: string)
   {
     this.ball = 
     {
@@ -75,12 +76,13 @@ export class Game
       height: this.groundWidth*(152.5)/274,
     };
 
+    const w = 0.2*UNIT;
     this.paddle1 = 
     {
-      width:0.2*UNIT ,
+      width:w ,
       height: this.ground.height*(0.3),
       position: {
-        x : -this.groundWidth/2 + this.paddle1.width,
+        x : -this.groundWidth/2 + w,
         y : 0 },
     };
 
@@ -96,6 +98,12 @@ export class Game
 
     this.points = { player1: 0, player2: 0 };
     this.sets = { player1: 0, player2: 0 };
+    if (level)
+      this.level = level;
+    else
+      this.level = 'medium';
+    if (!player2)
+      this.aiPlayer = true;
 
     this.io = io;
     this.roomId = roomId;
@@ -108,23 +116,22 @@ export class Game
   {
      const gameConstants = 
      {
-       groundWidth: this.ground.width,
-       groundHeight: this.ground.height,
-       ballRadius: this.ball.radius,
-       paddleWidth: this.paddle1.width,
-       paddleHeight: this.paddle1.height
-      }
+       groundWidth: this.ground.width/UNIT,
+       groundHeight: this.ground.height/UNIT,
+       ballRadius: this.ball.radius/UNIT,
+       paddleWidth: this.paddle1.width/UNIT,
+       paddleHeight: this.paddle1.height/UNIT
+      };
 
       this.io.to(this.roomId).emit("gameConstants", gameConstants);
   }
 
 
 
-  public startGameLoop(aiPlayer : boolean) {
+  public startGameLoop() {
     this.matchOver = false;
     this.setOver = false;
     this.isPaused = false;
-    this.aiPlayer = aiPlayer;
 
     const gameState = 
     {
@@ -132,7 +139,7 @@ export class Game
       setOver: this.setOver,
       isPaused: this.isPaused,
       aiPlayer : this.aiPlayer
-     }
+     };
 
      this.io.to(this.roomId).emit("gameState", gameState);
 
@@ -231,20 +238,9 @@ export class Game
 
 //Ai pedal hareketi
     if (this.aiPlayer)
-      {
-        const upperLimit = (this.ground.height - this.paddle1.height) / 2;
-        const step = 0.2*UNIT;
-        const targetY = predictBallY(this.ball, this.ground.width/2, this.paddle2.height);
-        if(Math.abs(this.paddle2.position.y - targetY) >= step)
-        {
-          const nextY = this.paddle2.position.y + step * Math.sign(targetY - this.paddle2.position.y);
-          if (Math.abs(nextY) <= upperLimit)
-            this.paddle2.position.y = nextY;
-        }
-      }
+      aiPaddleMovement(this.level, this.ball, this.paddle2, this.ground);
 
        
-
     // Top hareketi
     this.ball.position.x += this.ball.velocity.x;
     this.ball.position.y += this.ball.velocity.y;
@@ -265,7 +261,7 @@ export class Game
     const paddleYThreshold = (this.paddle1.height + this.ball.radius)/2;  // paddle genişliğine göre
     
     
-    // Paddle1 (Aşağıdaki oyuncu)
+    // Paddle1 (soldaki oyuncu)
     if (Math.abs(this.ball.position.x - this.paddle1.position.x) < paddleXThreshold && this.ball.velocity.x < 0 &&
       Math.abs(this.ball.position.y - this.paddle1.position.y) < paddleYThreshold && this.ball.position.x > this.paddle1.position.x)
       {
@@ -298,8 +294,10 @@ export class Game
       }
     
     
-    // Paddle2 (Yukarıdaki oyuncu)
-    if (
+    // Paddle2 (sağdaki oyuncu)
+   if (!this.aiPlayer) 
+  {
+      if (
       Math.abs(this.ball.position.x - this.paddle2.position.x) < paddleXThreshold && this.ball.velocity.x > 0 &&
       Math.abs(this.ball.position.y - this.paddle2.position.y) < paddleYThreshold && this.ball.position.x < this.paddle2.position.x 
     ) {
@@ -320,6 +318,7 @@ export class Game
         this.ball.velocity.x *= this.ball.speedIncreaseFactor;
         this.ball.velocity.y *= this.ball.speedIncreaseFactor;
     }
+  
     
     
     // pedalın köşesinden sektir
@@ -331,6 +330,7 @@ export class Game
       {
         this.ball.velocity.y *= -1;
       }
+    }
 
 
 
@@ -367,8 +367,8 @@ export class Game
     });
 
     this.io.to(this.roomId).emit("paddleUpdate", {
-      p1: this.paddle1.position.y,
-      p2: this.paddle2.position.y
+      p1y: this.paddle1.position.y/UNIT,
+      p2y: this.paddle2.position.y/UNIT
     });
   }
 

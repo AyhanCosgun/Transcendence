@@ -1,4 +1,6 @@
-import { Ball } from "./game";
+import { Ball, Paddle } from "./game";
+
+const UNIT = 40;
 
   //Bu fonksiyon, topun AI paddle'ının X konumuna vardığında hangi Y konumunda olacağını tahmin eder.
 
@@ -32,3 +34,22 @@ import { Ball } from "./game";
   
     return y;
   }
+
+  export function aiPaddleMovement(level: String, ball: Ball, paddle: Paddle, ground: {width: number, height: number} )
+     {
+       let step  = 0.2*UNIT;
+      if (level === 'easy')
+        step = 0.1*UNIT;
+      else if (level === 'hard')
+        step = 0.5*UNIT;
+
+
+          const upperLimit = (ground.height - paddle.height) / 2 + 5;
+          const targetY = predictBallY(ball, ground.width/2, paddle.height);
+          if(Math.abs(paddle.position.y - targetY) >= step)
+          {
+            const nextY = paddle.position.y + step * Math.sign(targetY - paddle.position.y);
+            if (Math.abs(nextY) <= upperLimit)
+              paddle.position.y = nextY;
+          }
+      }

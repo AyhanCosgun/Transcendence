@@ -152,6 +152,10 @@ padding: 0.2vw 1vw;
 
 
 
+/*oyun başlarkern seçenekler*/
+
+.hidden { display: none; }
+#difficulty button { margin: 0 5px; }
 
 
 

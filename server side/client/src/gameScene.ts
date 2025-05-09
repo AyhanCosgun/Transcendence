@@ -1,6 +1,7 @@
 import {FreeCamera, Scene, ArcRotateCamera, HemisphericLight, MeshBuilder, Vector3, Color3,
   StandardMaterial, Engine} from "@babylonjs/core";
 import { groundSize } from "./main";
+import { gameInfo } from "./network";
 
 // 🎮 Kamera ve ışık
 export function createCamera(scene: Scene)
@@ -32,7 +33,7 @@ export function createScene()
 // 🎮 Zemin
 export function createGround(scene: Scene)
 {
-  const width = 20;
+  const width = gameInfo.constants?.groundWidth!;
   const groundSize = { width: width, height: width*(152.5)/274 };
   const ground = MeshBuilder.CreatePlane("ground", groundSize, scene);
   const groundMaterial = new StandardMaterial("groundMaterial", scene);
@@ -47,7 +48,8 @@ export function createGround(scene: Scene)
 // 🎮 Paddle'lar ve top
 export function createPaddles(scene: Scene)
 {
-  const paddleSize = { width: 0.2, height: groundSize.height*(0.3), depth: 0.5 };
+  const wi = gameInfo.constants?.paddleWidth!;
+  const paddleSize = { width: wi, height: groundSize.height*(0.3), depth: 0.5 };
   const paddle1 = MeshBuilder.CreateBox("paddle1", paddleSize, scene);
   paddle1.position.x = -groundSize.width/2 + paddleSize.width;
   paddle1.position.y = 0;

@@ -81,7 +81,7 @@ export function resetBall(lastScorer: Player)
   // 🎯 Belirli bir süre bekle ( 1 saniye)
   setTimeout(() => {
 
-    const angle = lastScorer == 'player1' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
+    const angle = lastScorer === 'player1' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
     // 2 saniye sonra yeni rastgele bir hız ver
     ball.state.velocity = new Vector3( Math.cos(angle)*ball.state.firstSpeedFactor,
     Math.sin(angle)*ball.state.firstSpeedFactor,

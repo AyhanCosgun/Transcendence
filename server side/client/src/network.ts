@@ -1,69 +1,129 @@
 import { io } from "socket.io-client";
-// import { updateUIForMatchFound, updateUIForWaiting, showGameResult } from "./ui";
-// import { startGame, handleOpponentMove } from "./gameLogic";
-
-// import { updateUIForMatchFound, updateUIForWaiting, showGameResult } from "./ui";
-// import { startGame, handleOpponentMove } from "./gameLogic";
+import { gameState } from "./ui";
 
 // WebSocket bağlantısı oluşturuluyor
 export const socket = io("http://localhost:3000");
 
 
-// // 🎮 Karşı oyuncunun hareketini al
-// socket.on("opponent-move", (data) => {
-//   paddle2.position.y = data.paddlePosition;
-// });
+// OYUN SEÇENEKLERİNİ PAYLAŞ //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 
-// export function setupSocketListeners() {
-//   socket.addEventListener("open", () => {
-//     console.log("Sunucuya bağlanıldı.");
-//   });
+const btnVsComp = document.getElementById("btn-vs-computer")!;
+const btnFindRival = document.getElementById("btn-find-rival")!;
+const diffDiv = document.getElementById("difficulty")!;
 
-//   socket.addEventListener("message", (event) => {
-//     const data = JSON.parse(event.data);
+// 1) VS Computer’a basıldığında zorluk seçeneklerini göster
+btnVsComp.addEventListener("click", () => {
+  document.getElementById("menu")!.classList.add("hidden");
+  diffDiv.classList.remove("hidden");
+});
 
-//     switch (data.type) {
-//       case "matchFound":
-//         updateUIForMatchFound();
-//         break;
+// 2) Zorluk seçildiğinde server’a emit et
+diffDiv.querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const level = (btn as HTMLElement).dataset.level!;
+    socket.emit("startWithAI", { level });  
+  });
+});
 
-//       case "waitingForOpponent":
-//         updateUIForWaiting();
-//         break;
+// 3) Find Rival butonuna basıldığında normal matchmaking
+btnFindRival.addEventListener("click", () => {
+  document.getElementById("menu")!.classList.add("hidden");
+  socket.emit("findRival");
+});
 
-//       case "startGame":
-//         startGame(data.payload); // payload: { isPlayer1: true/false }
-//         break;
+// OYUN BİLGİLERİNİ AL //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 
-//       case "opponentMove":
-//         handleOpponentMove(data.payload); // payload: { x, y }
-//         break;
 
-//       case "gameOver":
-//         showGameResult(data.payload); // payload: { winner: "player1"/"player2"/"draw" }
-//         break;
+interface GameConstants {
+  groundWidth: number;
+  groundHeight: number;
+  ballRadius: number;
+  paddleWidth: number;
+  paddleHeight: number;
+}
 
-//       default:
-//         console.warn("Bilinmeyen mesaj tipi:", data);
-//         break;
-//     }
-//   });
+interface GameState {
+  matchOver: boolean;
+  setOver: boolean;
+  isPaused: boolean;
+  aiPlayer: boolean;
+}
 
-//   socket.addEventListener("close", () => {
-//     console.log("Sunucuyla bağlantı kapatıldı.");
-//   });
 
-//   socket.addEventListener("error", (err) => {
-//     console.error("WebSocket hatası:", err);
-//   });
-// }
+interface BallState {
+  bp: {x: number, y: number};
+  bv: {x: number, y: number};
+  points: { player1: number, player2: number };
+  sets: { player1: number, player2: number };
+}
 
-// // Oyuncunun yaptığı hamleyi sunucuya gönder
-// export function sendMove(move: { x: number; y: number }) {
-//   socket.send(JSON.stringify({
-//     type: "playerMove",
-//     payload: move,
-//   }));
-// }
+interface PaddleState {
+  p1y: number;
+  p2y: number;
+}
 
+class GameInfo
+{
+  constants: GameConstants | null = null;
+  state: GameState | null = null;
+  ball: BallState | null = null;
+  paddle: PaddleState | null = null;
+
+  /** Constants geldiğinde ata */
+  setConstants(c: GameConstants)
+  {
+    this.constants = c;
+  }
+
+  /** State geldiğinde ata */
+  setState(g: GameState)
+  {
+    this.state = g;
+  }
+
+  setBall(b: BallState)
+  {
+    this.ball = b;
+  }
+
+  setPaddle(p: PaddleState)
+  {
+    this.paddle = p;
+  }
+
+  /** bilgiler hazır mı? */ // BUNA GÖRE GAME LOOP BAŞLATILACAK !!!!!!!!!!!!!!!!!!
+  isReady() {
+    return Boolean(this.constants && this.state && this.ball && this.paddle);
+  }
+}
+
+export const gameInfo = new GameInfo();
+
+socket.on("gameConstants", (constants: GameConstants) => {
+  gameInfo.setConstants(constants);
+});
+
+socket.on("gameState", (state: GameState) => {
+  gameInfo.setState(state);
+});
+
+socket.on("ballUpdate", (ball: BallState) => {
+  gameInfo.setBall(ball);
+});
+
+socket.on("paddleUpdate", (paddle: PaddleState) => {
+  gameInfo.setPaddle(paddle);
+});
+
+//********************************************************************************************************************************** */
+
+
+
+  socket.addEventListener("close", () => {
+    console.log("Sunucuyla bağlantı kapatıldı.");
+  });
+
+  socket.addEventListener("error", (err) => {
+    console.error("WebSocket hatası:", err);
+  });
 

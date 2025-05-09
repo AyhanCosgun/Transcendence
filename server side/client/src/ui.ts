@@ -1,22 +1,7 @@
 import { Vector3} from "@babylonjs/core";
 import {ball, groundSize} from "./main";
 import { startButton } from "./main";
-
-//   // Basit mesajları göstermek için kullanılan HTML öğesini seç
-// const statusElement = document.getElementById("status")!;
-// const resultElement = document.getElementById("result")!;
-
-// // Rakip bulunduğunda kullanıcıya bilgi ver
-// export function updateUIForMatchFound() {
-//   statusElement.textContent = "Rakip bulundu! Oyun hazırlanıyor...";
-//   resultElement.textContent = "";
-// }
-
-// // Rakip bekleniyorsa kullanıcıya göster
-// export function updateUIForWaiting() {
-//   statusElement.textContent = "Rakip bekleniyor...";
-//   resultElement.textContent = "";
-// }
+import { gameInfo } from "./network";
 
 
 const scoreTable = document.getElementById("score-table")!;
@@ -26,32 +11,32 @@ const setTable = document.getElementById("set-table")!;
 // MAÇ VE SET AYARLAMA
 type Player = 'player1' | 'player2';
 
-export interface GameState {
-  points: { player1: number; player2: number };
-  sets: { player1: number; player2: number };
-  matchOver: boolean;
-  setOver: boolean;
-  isPaused: boolean;
-}
+// export interface GameState {
+//   points: { player1: number; player2: number };
+//   sets: { player1: number; player2: number };
+//   matchOver: boolean;
+//   setOver: boolean;
+//   isPaused: boolean;
+// }
 
 
-export const gameState: GameState = {
-  points: { player1: 0, player2: 0 },
-  sets: { player1: 0, player2: 0 },
-  matchOver: false,
-  setOver: false,
-  isPaused: false,
-};
+// export const gameState: GameState = {
+//   points: { player1: 0, player2: 0 },
+//   sets: { player1: 0, player2: 0 },
+//   matchOver: false,
+//   setOver: false,
+//   isPaused: false,
+// };
 
 
 export function updateScoreBoard()
 {
-   scoreTable.innerText = `${gameState.points.player1}  :  ${gameState.points.player2}`;
+   scoreTable.innerText = `${gameInfo.ball!.points.player1}  :  ${gameInfo.ball!.points.player2}`;
 }
 
 export function updateSetBoard()
 {
-    setTable.innerText = `${gameState.sets.player1}  :  ${gameState.sets.player2}`;
+    setTable.innerText = `${gameInfo.ball!.sets.player1}  :  ${gameInfo.ball!.sets.player2}`;
 }
 
 
@@ -85,8 +70,8 @@ export function resetBall(lastScorer: Player)
 
 export function startGame()
 {
-  gameState.matchOver = false;
-  gameState.isPaused = false;
+  gameInfo.state!.matchOver = false;
+  gameInfo.isPaused = false;
   resetScores();
   resetSets();
   Math.random() <= 0.5  ? resetBall('player1') : resetBall('player2');
@@ -95,15 +80,17 @@ export function startGame()
 
 export function resetScores()
 {
-  gameState.points.player1 = 0;
-  gameState.points.player2 = 0;
+  gameInfo.ball!.points.player1 = 0;
+
+  
+  gameInfo.ball!.points.player2 = 0;
   updateScoreBoard();
 }
 
 export function resetSets()
 {
-  gameState.sets.player1 = 0;
-  gameState.sets.player2 = 0;
+  gameInfo.ball!.sets.player1 = 0;
+  gameInfo.ball!.sets.player2 = 0;
   updateSetBoard();
 }
 
@@ -114,11 +101,11 @@ export function showSetToast(message: string): Promise<void>
     const toast = document.getElementById("set-toast")!;
     toast.textContent = message;
     toast.style.opacity = "1";
-    gameState.setOver = true;
+    gameInfo.state!.setOver = true;
 
     setTimeout(() => {
       toast.style.opacity = "0";
-      gameState.setOver = false;
+      gameInfo.state!.setOver = false;
       resolve();
     }, 3000);
   });
@@ -148,26 +135,26 @@ export function showEndMessage(message: string) {
 
 export function scorePoint(winner: Player)
 {
-  if (gameState.matchOver) return;
+  if (gameInfo.state?.matchOver) return;
 
-  gameState.points[winner]++;
+  gameInfo.ball!.points[winner]++;
 
   updateScoreBoard();
 
-  const p1 = gameState.points.player1;
-  const p2 = gameState.points.player2;
+  const p1 = gameInfo.ball!.points.player1;
+  const p2 = gameInfo.ball!.points.player2;
 
   // Kontrol: Set bitti mi?
   if ((p1 >= 11 || p2 >= 11) && Math.abs(p1 - p2) >= 2)
     {
       if (p1 > p2) {
-      gameState.sets.player1++;
+      gameInfo.ball!.sets.player1++;
     } else {
-      gameState.sets.player2++;      
+      gameInfo.ball!.sets.player2++;      
     }
 
     updateSetBoard();
-    const matchControl = (gameState.sets.player1 === 3 || gameState.sets.player2 === 3);
+    const matchControl = (gameInfo.ball!.sets.player1 === 3 || gameInfo.ball!.sets.player2 === 3);
     if (!matchControl)
         startNextSet(`Seti ${winner} kazandı!`);
     setTimeout(() => {
@@ -181,7 +168,7 @@ export function scorePoint(winner: Player)
     if (matchControl)
       {
         showEndMessage(`${winner} maçı kazandı !`);
-        gameState.matchOver = true;
+        gameInfo.state!.matchOver = true;
       }
   }
   else

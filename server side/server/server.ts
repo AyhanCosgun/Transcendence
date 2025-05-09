@@ -1,32 +1,30 @@
 // server/server.ts
 import { Server } from "socket.io";
 import { createServer } from "http";
-import { handleMatchmakingQueue, addPlayerToQueue } from "./matchmaking";
-import { Game } from "./game"; // Game sınıfı burada kullanılıyor
+import { addPlayerToQueue, removePlayerFromQueue, startGameWithAI} from "./matchmaking";
+import { Socket } from "socket.io";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: { origin: "*" },
 });
 
-io.on("connection", (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+io.on("connection", socket =>
+{
+  socket.on("startWithAI", ({ level }) => {
+    // Direkt AI modu başlat
+    startGameWithAI({ socket, alias: socket.id }, level, io);
+  });
 
-  // Oyuncuyu sıraya ekleyelim
-  addPlayerToQueue(socket);
+  socket.on("findRival", () => {
+    addPlayerToQueue(socket, socket.id, io);
+  });
 
-  // Gerekirse bağlantıdan çıkanları ele al
   socket.on("disconnect", () => {
-    console.log(`Client disconnected: ${socket.id}`);
-    // Sıradan çıkarma veya oyunu iptal etme işlemleri burada yapılabilir
+    removePlayerFromQueue(socket);
   });
 });
 
-// Bu fonksiyon Game başlatmak için matchmaking modülüne veriliyor
-handleMatchmakingQueue((player1, player2) => {
-  const game = new Game(player1, player2);
-  game.start();
-});
 
 const PORT = 3000;
 httpServer.listen(PORT, () => {
