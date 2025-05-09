@@ -1,5 +1,4 @@
 import { io } from "socket.io-client";
-import { gameState } from "./ui";
 
 // WebSocket bağlantısı oluşturuluyor
 export const socket = io("http://localhost:3000");
@@ -66,7 +65,7 @@ class GameInfo
 {
   constants: GameConstants | null = null;
   state: GameState | null = null;
-  ball: BallState | null = null;
+  ballState: BallState | null = null;
   paddle: PaddleState | null = null;
 
   /** Constants geldiğinde ata */
@@ -83,7 +82,7 @@ class GameInfo
 
   setBall(b: BallState)
   {
-    this.ball = b;
+    this.ballState = b;
   }
 
   setPaddle(p: PaddleState)
@@ -93,7 +92,7 @@ class GameInfo
 
   /** bilgiler hazır mı? */ // BUNA GÖRE GAME LOOP BAŞLATILACAK !!!!!!!!!!!!!!!!!!
   isReady() {
-    return Boolean(this.constants && this.state && this.ball && this.paddle);
+    return Boolean(this.constants && this.state && this.ballState && this.paddle);
   }
 }
 
@@ -107,8 +106,8 @@ socket.on("gameState", (state: GameState) => {
   gameInfo.setState(state);
 });
 
-socket.on("ballUpdate", (ball: BallState) => {
-  gameInfo.setBall(ball);
+socket.on("ballUpdate", (ballState: BallState) => {
+  gameInfo.setBall(ballState);
 });
 
 socket.on("paddleUpdate", (paddle: PaddleState) => {
@@ -118,12 +117,16 @@ socket.on("paddleUpdate", (paddle: PaddleState) => {
 //********************************************************************************************************************************** */
 
 
+// ???????????????????????????????????????????????????????????????????????????????????????????
 
-  socket.addEventListener("close", () => {
-    console.log("Sunucuyla bağlantı kapatıldı.");
-  });
 
-  socket.addEventListener("error", (err) => {
-    console.error("WebSocket hatası:", err);
-  });
+  // socket.addEventListener("close", () => {
+  //   console.log("Sunucuyla bağlantı kapatıldı.");
+  // });
 
+  // socket.addEventListener("error", (err) => {
+  //   console.error("WebSocket hatası:", err);
+  // });
+
+
+// ???????????????????????????????????????????????????????????????????????????????????????????

@@ -1,50 +1,23 @@
 // BallController.ts
 import { Mesh, MeshBuilder, Scene, StandardMaterial, Color3, Vector3 } from "@babylonjs/core";
+import { gameInfo } from "./network";
 
-interface BallState
-{
-  readonly firstSpeedFactor: number;
-  readonly airResistanceFactor: number;
-  minimumSpeed: number;
-  readonly radius: number;
-  speedIncreaseFactor: number;
-  firstPedalHit: number;
-  velocity: Vector3;
-}
 
 export class BallController
 {
-  private ball: Mesh;
-  public state: BallState;
+  ball: Mesh;
+  velocity: Vector3;
+  position: {x: number, y: number};
 
-  constructor(scene: Scene) {
-    this.state = {
-      firstSpeedFactor: 0.15,
-      airResistanceFactor: 0.998,
-      minimumSpeed: 0.15,
-      radius: 0.25,
-      speedIncreaseFactor: 1.7,
-      firstPedalHit: 0,
-      velocity: new Vector3(0, 0, 0),
-    };
 
-    this.ball = MeshBuilder.CreateSphere("ball", { diameter: 2 * this.state.radius }, scene);
+  constructor(scene: Scene)
+  {
+    this.ball = MeshBuilder.CreateSphere("ball", { diameter: 2 * gameInfo.constants?.ballRadius! }, scene);
     const ballMaterial = new StandardMaterial("ballMaterial", scene);
     ballMaterial.diffuseColor = new Color3(0.7, 0.7, 0.7);
     this.ball.material = ballMaterial;
-  }
 
-  public getBall(): Mesh {
-    return this.ball;
+    this.velocity = new Vector3(gameInfo.ballState?.bv.x, gameInfo.ballState?.bv.y, 0);
+    this.position = gameInfo.ballState?.bp!;
   }
-
-  public setVelocity(velocity: Vector3) {
-    this.state.velocity = velocity;
-  }
-
-  public getVelocity(): Vector3 {
-    return this.state.velocity;
-  }
-
-  // Gerekirse ek işlevsellik eklenebilir (örneğin: updatePosition, applyResistance, vs.)
 }

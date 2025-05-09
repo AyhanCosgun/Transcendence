@@ -52,11 +52,11 @@ export function createPaddles(scene: Scene)
   const paddleSize = { width: wi, height: groundSize.height*(0.3), depth: 0.5 };
   const paddle1 = MeshBuilder.CreateBox("paddle1", paddleSize, scene);
   paddle1.position.x = -groundSize.width/2 + paddleSize.width;
-  paddle1.position.y = 0;
+  paddle1.position.y = gameInfo.paddle?.p1y!;
 
   const paddle2 = MeshBuilder.CreateBox("paddle2", paddleSize, scene);
   paddle2.position.x = groundSize.width/2 - paddleSize.width;
-  paddle2.position.y = 0;
+  paddle2.position.y = gameInfo.paddle?.p2y!;
 
   // Paddle material
   const paddleMaterial = new StandardMaterial("paddleMaterial", scene);

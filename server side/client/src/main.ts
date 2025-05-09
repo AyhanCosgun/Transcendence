@@ -6,7 +6,6 @@ import { initializeEventListeners, createStartButton } from "./eventListeners";
 
 // 🎮 WebSocket bağlantısı
 import {socket } from "./network";
-import { gameState } from "./ui";
 
 // 🎮 Canvas ve oyun motoru
 const { canvas, engine, scene } = createScene();

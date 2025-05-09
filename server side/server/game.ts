@@ -156,6 +156,11 @@ export class Game
     });
   }
 
+  private resetScores()
+  {
+    this.points.player1 = 0;
+    this.points.player2 = 0;
+  }
 
 
   private startNextSet()
@@ -163,7 +168,9 @@ export class Game
     this.setOver = true;
   
       setTimeout(() => {
+        this.resetScores();
         this.setOver = false;
+
       }, 3000);
   }
 
