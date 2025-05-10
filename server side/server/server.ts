@@ -13,11 +13,15 @@ io.on("connection", socket =>
 {
   socket.on("startWithAI", ({ level }) => {
     // Direkt AI modu başlat
-    startGameWithAI({ socket, alias: socket.id }, level, io);
+    startGameWithAI({ socket, username: socket.id }, level, io);
   });
 
   socket.on("findRival", () => {
     addPlayerToQueue(socket, socket.id, io);
+  });
+
+  socket.on("localGame", () => {
+    startLocalGame(socket);
   });
 
   socket.on("disconnect", () => {

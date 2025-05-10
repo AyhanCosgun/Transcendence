@@ -51,5 +51,8 @@ const UNIT = 40;
             const nextY = paddle.position.y + step * Math.sign(targetY - paddle.position.y);
             if (Math.abs(nextY) <= upperLimit)
               paddle.position.y = nextY;
+
+            //if (desiredY - currentY > 0) return W
+            //else if (desiredY - currentY < 0) return S
           }
       }

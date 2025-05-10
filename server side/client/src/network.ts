@@ -9,6 +9,7 @@ export const socket = io("http://localhost:3000");
 const btnVsComp = document.getElementById("btn-vs-computer")!;
 const btnFindRival = document.getElementById("btn-find-rival")!;
 const diffDiv = document.getElementById("difficulty")!;
+const btnLocal = document.getElementById("btn-local")!;
 
 // 1) VS Computer’a basıldığında zorluk seçeneklerini göster
 btnVsComp.addEventListener("click", () => {
@@ -29,6 +30,15 @@ btnFindRival.addEventListener("click", () => {
   document.getElementById("menu")!.classList.add("hidden");
   socket.emit("findRival");
 });
+
+// 4) local game e tıklanırsa 
+
+btnLocal.addEventListener("click", () => {
+  document.getElementById("menu")!.classList.add("hidden");
+  socket.emit("localGame");
+
+});
+
 
 // OYUN BİLGİLERİNİ AL //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 

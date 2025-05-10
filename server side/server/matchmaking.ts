@@ -6,15 +6,15 @@ import { Server } from "socket.io";
 interface Player
 {
 	socket: Socket;
-	alias: String;
+	username: String;
 
 }
 
 const waitingPlayers: Player[] = [];
 
-export function addPlayerToQueue(socket: Socket, alias: String, io: Server)
+export function addPlayerToQueue(socket: Socket, username: String, io: Server)
 {
-	const newPlayer : Player = {socket, alias};
+	const newPlayer : Player = {socket, username};
 	waitingPlayers.push(newPlayer);
 	checkForMatch(io);
 }
@@ -41,6 +41,17 @@ export function removePlayerFromQueue(socket: Socket) {
 
 
 
+  export function startLocalGame(player1: Player, io: Server)
+  {
+	const roomId = `game_${player1.socket.id}_vs_friend`;
+	player1.socket.join(roomId);
+  
+	const game = new Game(player1.socket, player1.socket, io, roomId);
+	game.startGameLoop();
+  }
+
+
+
 function checkForMatch(io: Server) {
 	while (waitingPlayers.length >= 2) {
 		const player1 = waitingPlayers.shift();
@@ -55,7 +66,7 @@ function checkForMatch(io: Server) {
 			const game = new Game(player1.socket, player2.socket, io, roomId);
 			game.startGameLoop();
 
-			console.log(`Yeni oyun başlatıldı: ${roomId}`);
+			//console.log(`Yeni oyun başlatıldı: ${roomId}`);
 		}
 	}
 }
