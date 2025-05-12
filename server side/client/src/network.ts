@@ -3,6 +3,16 @@ import { io } from "socket.io-client";
 // WebSocket bağlantısı oluşturuluyor
 export const socket = io("http://localhost:3000");
 
+//ilk önce kullanıcı adını yolla //Şimdilik socket.id !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+socket.on("connect", () => {
+  socket.emit("username", { username: socket.id });
+});
+
+//ilerde böyle olacak:
+// export const socket = io("http://localhost:3000", {
+//   auth: { userId: myUserId }
+// });
+
 
 // OYUN SEÇENEKLERİNİ PAYLAŞ //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 

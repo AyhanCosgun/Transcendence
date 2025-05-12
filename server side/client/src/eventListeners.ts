@@ -65,6 +65,32 @@ export function initializeEventListeners() {
     }
   });
 
+
+
+
+
+
+
+
+
+
+
+
+//local player game
+  // Oyuncu1: W/S | Oyuncu2: ↑/↓
+window.addEventListener("keydown", (e) => {
+  if (e.key === "w") socket.emit("local-input", { player: "left", direction: "up" });
+  if (e.key === "s") socket.emit("local-input", { player: "left", direction: "down" });
+  if (e.key === "ArrowUp") socket.emit("local-input", { player: "right", direction: "up" });
+  if (e.key === "ArrowDown") socket.emit("local-input", { player: "right", direction: "down" });
+});
+
+window.addEventListener("keyup", (e) => {
+  if (["w", "s"].includes(e.key)) socket.emit("local-input", { player: "left", direction: "stop" });
+  if (["ArrowUp", "ArrowDown"].includes(e.key)) socket.emit("local-input", { player: "right", direction: "stop" });
+});
+
+
   // ******************************************************************************************************************************************************************************
   
 

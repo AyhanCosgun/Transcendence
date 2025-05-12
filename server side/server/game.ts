@@ -33,6 +33,7 @@ export interface Paddle
   readonly width: number;
   readonly height: number;
   position : Position;
+  speed: number;
 }
 
 
@@ -84,6 +85,7 @@ export class Game
       position: {
         x : -this.groundWidth/2 + w,
         y : 0 },
+      speed : 1
     };
 
     this.paddle2 = 
@@ -93,6 +95,7 @@ export class Game
       position: {
         x : this.groundWidth/2 - this.paddle1.width,
         y : 0 },
+      speed : 1
     };
 
 
@@ -111,6 +114,20 @@ export class Game
     this.listenForMoves();
   }
 
+  public getBall()
+  {
+    return this.ball;
+  }
+
+  public getGround()
+  {
+    return this.ground;
+  }
+
+  public getPaddle1()
+  {
+    return this.paddle1;
+  }
 
   private exportGameConstants()
   {

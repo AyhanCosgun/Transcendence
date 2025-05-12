@@ -34,25 +34,3 @@ const UNIT = 40;
   
     return y;
   }
-
-  export function aiPaddleMovement(level: String, ball: Ball, paddle: Paddle, ground: {width: number, height: number} )
-     {
-       let step  = 0.2*UNIT;
-      if (level === 'easy')
-        step = 0.1*UNIT;
-      else if (level === 'hard')
-        step = 0.5*UNIT;
-
-
-          const upperLimit = (ground.height - paddle.height) / 2 + 5;
-          const targetY = predictBallY(ball, ground.width/2, paddle.height);
-          if(Math.abs(paddle.position.y - targetY) >= step)
-          {
-            const nextY = paddle.position.y + step * Math.sign(targetY - paddle.position.y);
-            if (Math.abs(nextY) <= upperLimit)
-              paddle.position.y = nextY;
-
-            //if (desiredY - currentY > 0) return W
-            //else if (desiredY - currentY < 0) return S
-          }
-      }

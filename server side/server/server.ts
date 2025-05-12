@@ -11,6 +11,11 @@ const io = new Server(httpServer, {
 
 io.on("connection", socket =>
 {
+  socket.on("username", ({ username }) => {
+    // Direkt AI modu başlat
+    startGameWithAI({ socket, username: socket.id }, level, io);
+  });
+
   socket.on("startWithAI", ({ level }) => {
     // Direkt AI modu başlat
     startGameWithAI({ socket, username: socket.id }, level, io);
