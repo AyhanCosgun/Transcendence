@@ -6,6 +6,7 @@ const scoreTable = document.getElementById("score-table")!;
 const setTable = document.getElementById("set-table")!;
 
 
+
 // MAÇ VE SET AYARLAMA
 type Player = 'player1' | 'player2';
 

@@ -1,11 +1,12 @@
 import { Engine, Scene } from "@babylonjs/core";
 import {updateScoreBoard, updateSetBoard } from "./ui";
-import { groundSize, ball, paddleSize, paddle1, paddle2  } from "./main";
+import { ball, paddle1, paddle2  } from "./main";
 import { gameInfo } from "./network";
 
 export function startGameLoop(engine: Engine, scene: Scene): void
 {
     engine.runRenderLoop(() => {
+        if(!gameInfo.isReady()) return;
         if (gameInfo.state?.matchOver) return;
         if (gameInfo.state?.setOver) return;
         if (gameInfo.state?.isPaused) return;
@@ -20,10 +21,9 @@ export function startGameLoop(engine: Engine, scene: Scene): void
       //skor ve set güncellemesi
       updateScoreBoard();
       updateSetBoard();
-
-            
+   
         scene.render();
       });
-  }
+}
   
 

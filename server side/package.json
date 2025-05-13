@@ -1,0 +1,21 @@
+
+{
+  "name": "transcendence-pong",
+  "version": "1.0.0",
+  "scripts": {
+    "client:dev": "parcel src/index.html --open",
+    "server:dev": "ts-node-dev --respawn --transpile-only src/server/server.ts",
+    "start": "concurrently \"npm run server:dev\" \"npm run client:dev\""
+  },
+  "dependencies": {
+    "socket.io": "^4.x",
+    "socket.io-client": "^4.x",
+    "@babylonjs/core": "^5.x",
+    "typescript": "^4.x"
+  },
+  "devDependencies": {
+    "parcel": "^2.x",
+    "ts-node-dev": "^2.x",
+    "concurrently": "^7.x"
+  }
+}

@@ -2,6 +2,7 @@ import { createCamera, createPaddles, createGround, createWalls, createScene } f
 import { startGameLoop} from "./gameLoop"
 import { BallController } from "./ball";
 import { initializeEventListeners, createStartButton } from "./eventListeners";
+import { initializeEventListeners2 } from "./network";
 
 
 // 🎮 WebSocket bağlantısı
@@ -32,10 +33,8 @@ const { bottomWall, topWall } = createWalls(scene);
 
 export const startButton = createStartButton();
 initializeEventListeners();
+initializeEventListeners2();
 
-socket.on("opponent-move", (data) => {
-  paddle2.position.y = data.paddlePosition;
-});
 
 // 🎮 Oyun motoru döngüsü
 startGameLoop(engine, scene);

@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { initializeEventListeners } from "./eventListeners";
 
 // WebSocket bağlantısı oluşturuluyor
 export const socket = io("http://localhost:3000");
@@ -14,12 +15,17 @@ socket.on("connect", () => {
 // });
 
 
+type gameMode = 'vsAI' | 'localGame' | 'remoteGame';
+let game_mode: gameMode;
+
 // OYUN SEÇENEKLERİNİ PAYLAŞ //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 
-const btnVsComp = document.getElementById("btn-vs-computer")!;
-const btnFindRival = document.getElementById("btn-find-rival")!;
-const diffDiv = document.getElementById("difficulty")!;
-const btnLocal = document.getElementById("btn-local")!;
+export function initializeEventListeners2()
+{
+  const btnVsComp = document.getElementById("btn-vs-computer")!;
+  const btnFindRival = document.getElementById("btn-find-rival")!;
+  const diffDiv = document.getElementById("difficulty")!;
+  const btnLocal = document.getElementById("btn-local")!;
 
 // 1) VS Computer’a basıldığında zorluk seçeneklerini göster
 btnVsComp.addEventListener("click", () => {
@@ -31,7 +37,8 @@ btnVsComp.addEventListener("click", () => {
 diffDiv.querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
     const level = (btn as HTMLElement).dataset.level!;
-    socket.emit("startWithAI", { level });  
+    socket.emit("startWithAI", { level });
+    game_mode = 'vsAI';  
   });
 });
 
@@ -39,6 +46,7 @@ diffDiv.querySelectorAll("button").forEach(btn => {
 btnFindRival.addEventListener("click", () => {
   document.getElementById("menu")!.classList.add("hidden");
   socket.emit("findRival");
+  game_mode = 'remoteGame';
 });
 
 // 4) local game e tıklanırsa 
@@ -46,8 +54,11 @@ btnFindRival.addEventListener("click", () => {
 btnLocal.addEventListener("click", () => {
   document.getElementById("menu")!.classList.add("hidden");
   socket.emit("localGame");
+  game_mode = 'localGame';
 
 });
+
+}
 
 
 // OYUN BİLGİLERİNİ AL //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
@@ -74,6 +85,7 @@ interface BallState {
   bv: {x: number, y: number};
   points: { player1: number, player2: number };
   sets: { player1: number, player2: number };
+  usernames: {left: string, right: string}
 }
 
 interface PaddleState {
@@ -87,6 +99,7 @@ class GameInfo
   state: GameState | null = null;
   ballState: BallState | null = null;
   paddle: PaddleState | null = null;
+  mode: gameMode = game_mode;
 
   /** Constants geldiğinde ata */
   setConstants(c: GameConstants)
@@ -133,6 +146,12 @@ socket.on("ballUpdate", (ballState: BallState) => {
 socket.on("paddleUpdate", (paddle: PaddleState) => {
   gameInfo.setPaddle(paddle);
 });
+
+const blueTeam = document.getElementById("blue-team")!;
+const redTeam = document.getElementById("red-team")!;
+
+blueTeam.innerText = `${gameInfo.ballState?.usernames.left}`;
+redTeam.innerText = `${gameInfo.ballState?.usernames.right}`;
 
 //********************************************************************************************************************************** */
 

@@ -1,11 +1,11 @@
 // server/game.ts
 import { Server, Socket } from "socket.io";
-import { predictBallY, aiPaddleMovement } from "./aiPlayer";
+import { InputProvider } from "./inputProviders";
 
 const UNIT = 40;
 
 
-type Player = 'player1' | 'player2';
+type Player = 'leftPlayer' | 'rightPlayer';
 
 
 interface Position
@@ -33,7 +33,6 @@ export interface Paddle
   readonly width: number;
   readonly height: number;
   position : Position;
-  speed: number;
 }
 
 
@@ -44,21 +43,20 @@ export class Game
   private ball: Ball;
   private paddle1: Paddle;
   private paddle2: Paddle;
+  private paddleSpeed: number;
   private ground: {width: number; height : number};
-  private points: { player1: number, player2: number };
-  private sets: { player1: number, player2: number };
+  private points: { leftPlayer: number, rightPlayer: number };
+  private sets: { leftPlayer: number, rightPlayer: number };
   private groundWidth = 20*UNIT;
   private matchOver = true;
   private setOver = true;
   private isPaused = true;
-  private aiPlayer = false;
-  private level : String;
 
   private roomId: string;
   private io: Server;
   private interval: NodeJS.Timeout;
 
-  constructor( private player1: Socket, private player2: Socket, io: Server, roomId: string, level?: string)
+  constructor( private leftInput: InputProvider, private rightInput: InputProvider, io: Server, roomId: string)
   {
     this.ball = 
     {
@@ -84,8 +82,7 @@ export class Game
       height: this.ground.height*(0.3),
       position: {
         x : -this.groundWidth/2 + w,
-        y : 0 },
-      speed : 1
+        y : 0 }
     };
 
     this.paddle2 = 
@@ -94,24 +91,18 @@ export class Game
       height: this.ground.height*(0.3),
       position: {
         x : this.groundWidth/2 - this.paddle1.width,
-        y : 0 },
-      speed : 1
+        y : 0 }
     };
 
+    this.paddleSpeed = 1*UNIT;
 
-    this.points = { player1: 0, player2: 0 };
-    this.sets = { player1: 0, player2: 0 };
-    if (level)
-      this.level = level;
-    else
-      this.level = 'medium';
-    if (!player2)
-      this.aiPlayer = true;
+    this.points = { leftPlayer: 0, rightPlayer: 0 };
+    this.sets = { leftPlayer: 0, rightPlayer: 0 };
 
     this.io = io;
     this.roomId = roomId;
     this.exportGameConstants();
-    this.listenForMoves();
+    //this.listenForMoves();
   }
 
   public getBall()
@@ -124,9 +115,9 @@ export class Game
     return this.ground;
   }
 
-  public getPaddle1()
+  public getPaddleSpeed()
   {
-    return this.paddle1;
+    return this.paddleSpeed;
   }
 
   private exportGameConstants()
@@ -155,7 +146,6 @@ export class Game
       matchOver: this.matchOver,
       setOver: this.setOver,
       isPaused: this.isPaused,
-      aiPlayer : this.aiPlayer
      };
 
      this.io.to(this.roomId).emit("gameState", gameState);
@@ -163,20 +153,20 @@ export class Game
     this.interval = setInterval(() => this.update(), 1000 / 60); // 60 FPS
   }
 
-  private listenForMoves() {
-    this.player1.on("move", (data) => {
-      this.paddle1.position.y = data.y;
-    });
+  // private listenForMoves() {
+  //   this.player1.on("move", (data) => {
+  //     this.paddle1.position.y = data.y;
+  //   });
 
-    this.player2.on("move", (data) => {
-      this.paddle2.position.y = data.y;
-    });
-  }
+  //   this.player2.on("move", (data) => {
+  //     this.paddle2.position.y = data.y;
+  //   });
+  // }
 
   private resetScores()
   {
-    this.points.player1 = 0;
-    this.points.player2 = 0;
+    this.points.leftPlayer = 0;
+    this.points.rightPlayer = 0;
   }
 
 
@@ -193,7 +183,7 @@ export class Game
 
 
 
-  private resetBall(lastScorer: "player1" | "player2")
+  private resetBall(lastScorer: "leftPlayer" | "rightPlayer")
   {
     this.ball.firstPedalHit = 0;
     this.ball.speedIncreaseFactor = 1.7*UNIT;
@@ -208,7 +198,7 @@ export class Game
     // 🎯 Belirli bir süre bekle ( 1 saniye)
     setTimeout(() => {
   
-      const angle = lastScorer == 'player1' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
+      const angle = lastScorer == 'leftPlayer' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
       // 2 saniye sonra yeni rastgele bir hız ver
       this.ball.velocity = {x: Math.cos(angle)*this.ball.firstSpeedFactor, y: Math.sin(angle)*this.ball.firstSpeedFactor};
   
@@ -224,20 +214,20 @@ export class Game
   
    // updateScoreBoard();
   
-    const p1 = this.points.player1;
-    const p2 = this.points.player2;
+    const p1 = this.points.leftPlayer;
+    const p2 = this.points.rightPlayer;
   
     // Kontrol: Set bitti mi?
     if ((p1 >= 11 || p2 >= 11) && Math.abs(p1 - p2) >= 2)
       {
         if (p1 > p2) {
-        this.sets.player1++;
+        this.sets.leftPlayer++;
       } else {
-        this.sets.player2++;      
+        this.sets.rightPlayer++;      
       }
   
       //updateSetBoard();
-      const matchControl = (this.sets.player1 === 3 || this.sets.player2 === 3);
+      const matchControl = (this.sets.leftPlayer === 3 || this.sets.rightPlayer === 3);
       if (!matchControl)
           this.startNextSet();
             
@@ -259,15 +249,17 @@ export class Game
     if (this.setOver) return;
     if (this.isPaused) return;
 
-
-//Ai pedal hareketi
-    if (this.aiPlayer)
-      aiPaddleMovement(this.level, this.ball, this.paddle2, this.ground);
-
        
     // Top hareketi
     this.ball.position.x += this.ball.velocity.x;
     this.ball.position.y += this.ball.velocity.y;
+
+    //pedal hareketi
+    const deltaY1 = this.leftInput.getPaddleDelta() * this.paddleSpeed;
+    const deltaY2 = this.rightInput.getPaddleDelta() * this.paddleSpeed;
+    this.paddle1.position.y += deltaY1;
+    this.paddle2.position.y += deltaY2;
+
 
 
     // 🎯 Duvar Çarpışması
@@ -319,8 +311,7 @@ export class Game
     
     
     // Paddle2 (sağdaki oyuncu)
-   if (!this.aiPlayer) 
-  {
+   
       if (
       Math.abs(this.ball.position.x - this.paddle2.position.x) < paddleXThreshold && this.ball.velocity.x > 0 &&
       Math.abs(this.ball.position.y - this.paddle2.position.y) < paddleYThreshold && this.ball.position.x < this.paddle2.position.x 
@@ -354,18 +345,17 @@ export class Game
       {
         this.ball.velocity.y *= -1;
       }
-    }
 
 
 
       // 🎯 Skor kontrolü
       if (this.ball.position.x > this.ground.width/2 + 5)
         {
-          this.scorePoint('player1');
+          this.scorePoint('leftPlayer');
         }
       else if (this.ball.position.x < -this.ground.width/2 - 5)
         {
-          this.scorePoint('player2');
+          this.scorePoint('rightPlayer');
         }
       
       
@@ -388,6 +378,7 @@ export class Game
       bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
       score: this.points,
       sets: this.sets,
+      usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()}
     });
 
     this.io.to(this.roomId).emit("paddleUpdate", {
