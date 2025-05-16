@@ -1,12 +1,24 @@
 import { createCamera, createPaddles, createGround, createWalls, createScene } from "./gameScene";
 import { startGameLoop} from "./gameLoop"
 import { BallController } from "./ball";
-import { initializeEventListeners, createStartButton } from "./eventListeners";
-import { initializeEventListeners2 } from "./network";
+import { initializeGameSettings, GameInfo } from "./network";
+import { createGame } from "./ui";
 
 
 // 🎮 WebSocket bağlantısı
-import {socket } from "./network";
+import {createSocket } from "./network";
+
+export const socket = createSocket();
+
+const game_mode = initializeGameSettings();
+
+const startButton = document.getElementById("start-button")!;
+export let gameInfo : GameInfo;
+ startButton.addEventListener("click", () => {
+    gameInfo = createGame(socket, game_mode);
+    });
+
+
 
 // 🎮 Canvas ve oyun motoru
 const { canvas, engine, scene } = createScene();
@@ -31,12 +43,8 @@ export const ball = new BallController(scene);
 // 🎮 Duvarlar
 const { bottomWall, topWall } = createWalls(scene);
 
-export const startButton = createStartButton();
-initializeEventListeners();
-initializeEventListeners2();
-
 
 // 🎮 Oyun motoru döngüsü
-startGameLoop(engine, scene);
+    startGameLoop(engine, scene);
 
 canvas.focus();

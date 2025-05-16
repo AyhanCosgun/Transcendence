@@ -1,7 +1,6 @@
 import { Engine, Scene } from "@babylonjs/core";
 import {updateScoreBoard, updateSetBoard } from "./ui";
-import { ball, paddle1, paddle2  } from "./main";
-import { gameInfo } from "./network";
+import { ball, paddle1, paddle2, gameInfo  } from "./main";
 
 export function startGameLoop(engine: Engine, scene: Scene): void
 {

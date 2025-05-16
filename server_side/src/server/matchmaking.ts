@@ -20,6 +20,11 @@ export function addPlayerToQueue(player: Player, io: Server)
 
 export function removePlayerFromQueue(player: Player)
 {
+	 const checkPlayer = waitingPlayers.get(player.socket.id);
+  if (!checkPlayer) {
+    console.warn(`removePlayerFromQueue: player not found for socket.id=${player.socket.id}`);
+    return;
+  }
 	waitingPlayers.delete(player.socket.id);
 }
   
@@ -40,6 +45,8 @@ export function removePlayerFromQueue(player: Player)
 
 			// Yeni bir oyun başlat
 	const game = new Game(leftInput, rightInput, io, roomId);
+	getGame = () => game;
+	getPaddle = () => game.getPaddle2();
 	game.startGameLoop();
   }
 

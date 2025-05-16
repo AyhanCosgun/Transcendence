@@ -1,12 +1,19 @@
-// server/server.ts
 import { Server } from "socket.io";
 import { createServer } from "http";
 import {Player, addPlayerToQueue, removePlayerFromQueue, startGameWithAI, startLocalGame} from "./matchmaking";
 import { Socket } from "socket.io";
 
+console.log(require.resolve("./matchmaking"));
+
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: { origin: "*" },
+});
+
+
+const PORT = 3000;
+httpServer.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
 
 
@@ -25,9 +32,7 @@ io.on("connection", socket =>
   socket.once("username", ({ username }) => {
     //oyuncuyu kaydet
     players.set(socket.id, { socket, username });
-  });
-
-  const player = players.get(socket.id);
+    const player = players.get(socket.id);
 
   socket.on("startWithAI", ({ level }) => {
     // Direkt AI modu başlat
@@ -48,9 +53,4 @@ io.on("connection", socket =>
   });
 
 });
-
-
-const PORT = 3000;
-httpServer.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
 });

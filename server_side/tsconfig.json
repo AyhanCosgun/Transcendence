@@ -117,11 +117,28 @@
 
 
 
+// {
+//   "compilerOptions": {
+//     "target": "ES2020",           
+//     "module": "ESNext",           
+//     "moduleResolution": "Node",
+//     "strict": true,
+//     "esModuleInterop": true,
+//     "skipLibCheck": true,
+//     "outDir": "./dist",
+//     "rootDir": "./src",
+//     "resolveJsonModule": true,
+//     "allowJs": false
+//   },
+//   "include": ["src"]
+// }
+
+
 {
   "compilerOptions": {
-    "target": "ES2020",           
-    "module": "ESNext",           
-    "moduleResolution": "Node",
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -132,3 +149,4 @@
   },
   "include": ["src"]
 }
+

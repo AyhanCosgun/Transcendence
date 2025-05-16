@@ -1,8 +1,11 @@
-import { io } from "socket.io-client";
-import { initializeEventListeners } from "./eventListeners";
+import { io, Socket } from "socket.io-client";
+import { gameInfo, socket } from "./main";
+//import { Socket } from "socket.io";
 
+export function createSocket(): Socket
+{
 // WebSocket bağlantısı oluşturuluyor
-export const socket = io("http://localhost:3000");
+const socket = io("http://localhost:3000");
 
 //ilk önce kullanıcı adını yolla //Şimdilik socket.id !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 socket.on("connect", () => {
@@ -14,21 +17,27 @@ socket.on("connect", () => {
 //   auth: { userId: myUserId }
 // });
 
+  return socket;
+}
 
-type gameMode = 'vsAI' | 'localGame' | 'remoteGame';
-let game_mode: gameMode;
+
+export type gameMode = 'vsAI' | 'localGame' | 'remoteGame' | null;
 
 // OYUN SEÇENEKLERİNİ PAYLAŞ //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 
-export function initializeEventListeners2()
+export function initializeGameSettings(): gameMode
 {
+  let game_mode: gameMode = null;
+
   const btnVsComp = document.getElementById("btn-vs-computer")!;
   const btnFindRival = document.getElementById("btn-find-rival")!;
   const diffDiv = document.getElementById("difficulty")!;
   const btnLocal = document.getElementById("btn-local")!;
+  const startButton = document.getElementById("start-button")!;
 
 // 1) VS Computer’a basıldığında zorluk seçeneklerini göster
-btnVsComp.addEventListener("click", () => {
+btnVsComp.addEventListener("click", () =>
+  {
   document.getElementById("menu")!.classList.add("hidden");
   diffDiv.classList.remove("hidden");
 });
@@ -38,7 +47,10 @@ diffDiv.querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
     const level = (btn as HTMLElement).dataset.level!;
     socket.emit("startWithAI", { level });
-    game_mode = 'vsAI';  
+    console.log(`${level} a TIKLANMIŞ`);
+    game_mode = 'vsAI'; 
+     diffDiv.classList.add("hidden"); 
+    startButton.style.display = "block";
   });
 });
 
@@ -57,7 +69,7 @@ btnLocal.addEventListener("click", () => {
   game_mode = 'localGame';
 
 });
-
+  return game_mode;
 }
 
 
@@ -93,14 +105,17 @@ interface PaddleState {
   p2y: number;
 }
 
-class GameInfo
+export class GameInfo
 {
   constants: GameConstants | null = null;
   state: GameState | null = null;
   ballState: BallState | null = null;
   paddle: PaddleState | null = null;
-  mode: gameMode = game_mode;
-
+  mode: gameMode;
+  constructor(mode: gameMode)
+  {
+    this.mode = mode;
+  }
   /** Constants geldiğinde ata */
   setConstants(c: GameConstants)
   {
@@ -129,7 +144,9 @@ class GameInfo
   }
 }
 
-export const gameInfo = new GameInfo();
+
+export function prepareGameInfo(socket: Socket)
+{
 
 socket.on("gameConstants", (constants: GameConstants) => {
   gameInfo.setConstants(constants);
@@ -152,6 +169,7 @@ const redTeam = document.getElementById("red-team")!;
 
 blueTeam.innerText = `${gameInfo.ballState?.usernames.left}`;
 redTeam.innerText = `${gameInfo.ballState?.usernames.right}`;
+}
 
 //********************************************************************************************************************************** */
 

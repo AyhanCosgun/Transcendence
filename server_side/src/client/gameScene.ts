@@ -1,7 +1,6 @@
 import {FreeCamera, Scene, ArcRotateCamera, HemisphericLight, MeshBuilder, Vector3, Color3,
   StandardMaterial, Engine} from "@babylonjs/core";
-import { groundSize } from "./main";
-import { gameInfo } from "./network";
+import { groundSize, gameInfo } from "./main";
 
 // 🎮 Kamera ve ışık
 export function createCamera(scene: Scene)
@@ -21,7 +20,12 @@ export function createCamera(scene: Scene)
 
 export function createScene()
 {
-  const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+  //const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+  const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+if (!canvas) {
+  throw new Error("Canvas element not found");
+}
+
   const engine = new Engine(canvas, true);
   const scene = new Scene(engine);
 

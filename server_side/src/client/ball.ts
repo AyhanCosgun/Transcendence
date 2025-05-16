@@ -1,6 +1,6 @@
 // BallController.ts
 import { Mesh, MeshBuilder, Scene, StandardMaterial, Color3, Vector3 } from "@babylonjs/core";
-import { gameInfo } from "./network";
+import { gameInfo } from "./main";
 
 
 export class BallController

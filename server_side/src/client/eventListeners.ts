@@ -1,20 +1,12 @@
-import { startGame, endMsg } from "./ui";
-import { socket } from "./network";
-import { gameInfo } from "./network";
+import { updateScoreBoard, updateSetBoard, endMsg } from "./ui";
+import { gameInfo, socket } from "./main";
 
 
 const startButton = document.getElementById("start-button")!;
+const scoreBoard = document.getElementById("scoreboard")!;
+const setBoard = document.getElementById("setboard")!;
 
-export function createStartButton()
-{
-   // START BUTTON
-   startButton.addEventListener("click", () => {
-     endMsg.style.display = "none";
-     startButton.style.display = "none";
-     startGame();
-   });
-   return startButton;
-}
+
 
 export function initializeEventListeners()
 {
@@ -128,7 +120,16 @@ export function initializeEventListeners()
   newmatchButton?.addEventListener("click", () => {
     resumeButton.style.display = "none";
     newmatchButton.style.display = "none";
-    startGame();
+    
+     endMsg.style.display = "none";
+        startButton.style.display = "none";
+        scoreBoard.style.display = "flex";
+        setBoard.style.display = "flex";
+
+         gameInfo.state!.matchOver = false;
+          gameInfo.state!.isPaused = false;
+          updateScoreBoard();
+          updateSetBoard();
   });
   
 

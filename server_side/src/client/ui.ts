@@ -1,9 +1,13 @@
-import { startButton } from "./main";
-import { gameInfo } from "./network";
+import {  gameInfo } from "./main";
+import { GameInfo, prepareGameInfo, gameMode} from "./network";
+import { Socket } from "socket.io-client";
+import { initializeEventListeners } from "./eventListeners";
 
-
+const scoreBoard = document.getElementById("scoreboard")!;
+const setBoard = document.getElementById("setboard")!;
 const scoreTable = document.getElementById("score-table")!;
 const setTable = document.getElementById("set-table")!;
+const startButton = document.getElementById("start-button")!;
 
 
 
@@ -25,12 +29,22 @@ export function updateSetBoard()
 
 // OYUN FONKSİYONLARI
 
-export function startGame()
+export function createGame(socket: Socket, mode: gameMode): GameInfo
 {
+    endMsg.style.display = "none";
+    startButton.style.display = "none";
+    scoreBoard.style.display = "flex";
+    setBoard.style.display = "flex";
+    
+  const gameInfo = new GameInfo(mode);
+  prepareGameInfo(socket);
+  initializeEventListeners();
   gameInfo.state!.matchOver = false;
   gameInfo.state!.isPaused = false;
   updateScoreBoard();
   updateSetBoard();
+
+  return gameInfo;
 }
 
 

@@ -120,6 +120,11 @@ export class Game
     return this.paddleSpeed;
   }
 
+    public getPaddle2()
+  {
+    return this.paddle2;
+  }
+
   private exportGameConstants()
   {
      const gameConstants = 
