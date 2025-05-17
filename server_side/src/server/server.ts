@@ -11,7 +11,7 @@ const io = new Server(httpServer, {
 });
 
 
-const PORT = 3000;
+const PORT = 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });

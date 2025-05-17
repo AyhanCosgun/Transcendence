@@ -8,7 +8,7 @@ export function createCamera(scene: Scene)
 {
   const camera = new FreeCamera("Camera", new Vector3(0,0 , -20), scene);
   camera.setTarget(Vector3.Zero());
- // camera.rotation.x = Math.PI / -32;
+  //camera.rotation.x = Math.PI / -32;
   camera.inputs.clear();
   
   new HemisphericLight("light", new Vector3(1, 1, 0), scene);

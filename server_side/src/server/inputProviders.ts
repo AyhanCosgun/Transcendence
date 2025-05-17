@@ -74,7 +74,7 @@ export class AIPlayerInput implements InputProvider
 
 export class LocalPlayerInput implements InputProvider
 {
-  private delta: number = 0;
+  private delta = 0;
    private player: Player;
    private side: String;
 
@@ -82,14 +82,15 @@ export class LocalPlayerInput implements InputProvider
   {
     this.player = player;
     this.side = side;
-    player.socket.on("local-input", ({ player, direction }) =>
+    player.socket.on("local-input", ({ player, direction }: { player: "left" | "right", direction: "up" | "down" | "stop" }) =>
 	{
-		if ((player === "left" && this.side === "left") || (player === "right" && this.side === "right"))
-       this.delta = direction === "up" ? 1 : direction === "down" ? -1 : 0;
+    console.log(``)
+		//if ((player === "left" && this.side === "left") || (player === "right" && this.side === "right"))
+       this.delta = direction === "up" ? +1 : direction === "down" ? -1 : 0;
 	});
   }
 
-  getPaddleDelta(): number {
+  getPaddleDelta(){
     return this.delta;
   }
 

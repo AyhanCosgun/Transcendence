@@ -1,4 +1,3 @@
-
 {
   "name": "transcendence-pong",
   "version": "1.0.0",
@@ -17,5 +16,9 @@
     "parcel": "^2.x",
     "ts-node-dev": "^2.x",
     "concurrently": "^7.x"
-  }
+  },
+  
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }

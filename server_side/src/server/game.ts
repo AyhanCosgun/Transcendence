@@ -1,6 +1,7 @@
 // server/game.ts
 import { Server, Socket } from "socket.io";
 import { InputProvider } from "./inputProviders";
+import { time } from "console";
 
 const UNIT = 40;
 
@@ -79,6 +80,7 @@ export class Game
   private matchOver = true;
   private setOver = true;
   private isPaused = true;
+  private lastUpdatedTime: number = 0; /* ms */
 
   private roomId: string;
   private io: Server;
@@ -90,12 +92,12 @@ export class Game
     {
         firstSpeedFactor: 0.18*UNIT,
         airResistanceFactor: 0.998,
-        minimumSpeed: 0.15*UNIT,
+        minimumSpeed: 0.18*UNIT,
         radius: 0.25*UNIT,
         speedIncreaseFactor: 1.7,
         firstPedalHit: 0,
         position : { x:0 , y:0},
-        velocity : {x:0.14*UNIT, y:0.15*UNIT},
+        velocity : {x:0, y:0},
     };
     this.ground =
     {
@@ -184,8 +186,9 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
      };
 
      this.io.to(this.roomId).emit("gameState", gameState);
+     Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
 
-    this.interval = setInterval(() => this.update(), 1000 / 160); // 60 FPS
+    this.interval = setInterval(() => this.update(), 1000 / 120); // 60 FPS
   }
 
   // private listenForMoves() {
@@ -290,10 +293,23 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
     if (this.setOver) return;
     if (this.isPaused) return;
 
-       
+    let timeDifferenceMultiplier = 1;
+
+    const now = Date.now(); // ms cinsinden zaman damgası (number)
+    
+    // Eğer lastUpdatedTime tanımlıysa, farkı hesapla
+    if (this.lastUpdatedTime !== undefined) {
+      const delta = now - this.lastUpdatedTime; // ms cinsinden fark
+      timeDifferenceMultiplier = delta*60/1000; // ya da delta / bazı referans değer
+    }
+    
+    // Zamanı güncelle
+    this.lastUpdatedTime = now;
+    
+    
     // Top hareketi
-    this.ball.position.x += this.ball.velocity.x;
-    this.ball.position.y += this.ball.velocity.y;
+    this.ball.position.x += this.ball.velocity.x*timeDifferenceMultiplier;
+    this.ball.position.y += this.ball.velocity.y*timeDifferenceMultiplier;
 
     //pedal hareketi
     const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
@@ -335,7 +351,7 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
       if (this.ball.firstPedalHit++)
         {
           this.ball.speedIncreaseFactor = 1.2;
-          this.ball.minimumSpeed = 0.2*UNIT;
+          this.ball.minimumSpeed = 0.25*UNIT;
         }
     
         // 🎯 HIZI ARTTIR
@@ -370,7 +386,7 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
       if (this.ball.firstPedalHit++)
       {
         this.ball.speedIncreaseFactor = 1.2;
-        this.ball.minimumSpeed = 0.2*UNIT;
+        this.ball.minimumSpeed = 0.25*UNIT;
       }
     
         // 🎯 HIZI ARTTIR

@@ -32,7 +32,6 @@ export function removePlayerFromQueue(player: Player)
 
   export function startGameWithAI(human: Player, level: "easy"|"medium"|"hard", io: Server)
   {
-	;
 	const roomId = `game_${human.socket.id}_vs_AI_${level}`;
 	human.socket.join(roomId);
 	

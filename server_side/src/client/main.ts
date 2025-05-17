@@ -17,6 +17,7 @@ export const startButton = document.getElementById("start-button")!;
 initializeGameSettings((game_mode) => {
 	// Oyun başlatma butonuna tıklanınca:
 	startButton.addEventListener("click", async () => {
+        console.log("STARTTA TIKLANDI");
         socket.emit("start");
         const gameInfo = new GameInfo(game_mode);
         await waitForGameInfoReady(gameInfo, socket);

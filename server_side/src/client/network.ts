@@ -5,7 +5,8 @@ import { socket, startButton } from "./main";
 export function createSocket(): Socket
 {
 // WebSocket bağlantısı oluşturuluyor
-const socket = io("http://localhost:3000");
+const socket = io("http://localhost:3001");
+//const socket = io("http://127.0.0.1:3001");
 
 //ilk önce kullanıcı adını yolla //Şimdilik socket.id !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 socket.on("connect", () => {
@@ -14,7 +15,7 @@ socket.on("connect", () => {
 });
 
 //ilerde böyle olacak:
-// export const socket = io("http://localhost:3000", {
+// export const socket = io("http://localhost:3001", {
 //   auth: { userId: myUserId }
 // });
 
