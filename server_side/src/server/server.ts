@@ -1,9 +1,7 @@
 import { Server } from "socket.io";
 import { createServer } from "http";
 import {Player, addPlayerToQueue, removePlayerFromQueue, startGameWithAI, startLocalGame} from "./matchmaking";
-import { Socket } from "socket.io";
-
-console.log(require.resolve("./matchmaking"));
+//import { Socket } from "socket.io";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {

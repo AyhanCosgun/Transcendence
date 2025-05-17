@@ -17,11 +17,11 @@ export const startButton = document.getElementById("start-button")!;
 initializeGameSettings((game_mode) => {
 	// Oyun başlatma butonuna tıklanınca:
 	startButton.addEventListener("click", async () => {
-        console.log("STARTTA TIKLANDI");
+        console.log(`START A TIKLANDI, içeriği : ${startButton.innerText}`);
         socket.emit("start");
         const gameInfo = new GameInfo(game_mode);
         await waitForGameInfoReady(gameInfo, socket);
-       console.log("VERİLER HAZIR");
+        console.log(`${socket.id} için VERİLER HAZIR`);
 		createGame(socket, gameInfo);
 		startGame(gameInfo); // oyun kurulumuna geç
 	});
@@ -36,7 +36,6 @@ let ballRef: BallController;
 
 export function startGame(gameInfo: GameInfo)
 {
-
 // 🎮 Canvas ve oyun motoru
 const { canvas, engine, scene } = createScene();
 

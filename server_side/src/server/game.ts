@@ -1,7 +1,7 @@
 // server/game.ts
 import { Server, Socket } from "socket.io";
 import { InputProvider } from "./inputProviders";
-import { time } from "console";
+//import { time } from "console";
 
 const UNIT = 40;
 
@@ -49,6 +49,7 @@ export interface Ball
   readonly firstSpeedFactor: number;
   readonly airResistanceFactor: number;
   minimumSpeed: number;
+  maximumSpeed: number;
   readonly radius: number;
   speedIncreaseFactor: number;
   firstPedalHit: number;
@@ -93,6 +94,7 @@ export class Game
         firstSpeedFactor: 0.18*UNIT,
         airResistanceFactor: 0.998,
         minimumSpeed: 0.18*UNIT,
+        maximumSpeed: 0.5*UNIT,
         radius: 0.25*UNIT,
         speedIncreaseFactor: 1.7,
         firstPedalHit: 0,
@@ -170,7 +172,7 @@ export class Game
 
 
   public startGameLoop() {
-console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername()}   rightinput: ${this.rightInput.getUsername()}`)
+    console.log(`startGameLoop içine geldim`);
 
     this.exportGameConstants();
 
@@ -186,7 +188,10 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
      };
 
      this.io.to(this.roomId).emit("gameState", gameState);
-     Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
+     if(this.isPaused === false)
+       {
+         Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
+       }
 
     this.interval = setInterval(() => this.update(), 1000 / 120); // 60 FPS
   }
@@ -283,11 +288,23 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
 
   private update()
   {
-    // this.leftInput.getSocket()!.on("game-state", (data: boolean) =>
-    // {
-    //   this.matchOver = data;
+    this.leftInput.getSocket!().on("game-state", (state: GameState) =>
+    {//console.log(`game-state bildirimi geldi: isPaused = ${state.isPaused}`);
+      this.matchOver = state.matchOver;
+      this.setOver = state.setOver;
+      this.isPaused = state.isPaused;
 
-    // });
+    });
+      if(this.rightInput.getUsername() !== "AI")
+     {
+          this.rightInput.getSocket!().on("game-state", (state: GameState) =>
+        {
+          this.matchOver = state.matchOver;
+          this.setOver = state.setOver;
+          this.isPaused = state.isPaused;
+
+        });
+      }
     
     if (this.matchOver) return;
     if (this.setOver) return;
@@ -333,8 +350,8 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
     
     
     // 🎯 Paddle Çarpışması
-    const paddleXThreshold = this.ball.radius + this.paddle1.width;  // çarpışma hassasiyeti
-    const paddleYThreshold = (this.paddle1.height + this.ball.radius)/2;  // paddle genişliğine göre
+    const paddleXThreshold = (this.ball.radius + this.paddle1.width + 1);  // çarpışma hassasiyeti
+    const paddleYThreshold = (this.paddle1.height + this.ball.radius)/2 +1;  // paddle genişliğine göre
     
     
     // Paddle1 (soldaki oyuncu)
@@ -362,7 +379,7 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
     // pedalın köşesinden sektir
     if (Math.abs(this.ball.position.x - this.paddle1.position.x) < paddleXThreshold && this.ball.velocity.x < 0
       && Math.abs(this.ball.position.y - this.paddle1.position.y) >= paddleYThreshold
-      && Math.abs(this.ball.position.y - this.paddle1.position.y) <= (this.paddle1.height/2 + this.ball.radius)
+      && Math.abs(this.ball.position.y - this.paddle1.position.y) <= (this.paddle1.height/2 + this.ball.radius + 1)
       && this.ball.position.x > this.paddle1.position.x
       && (this.ball.position.y - this.paddle1.position.y) * this.ball.velocity.y < 0 )
       {
@@ -399,7 +416,7 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
     // pedalın köşesinden sektir
     if (Math.abs(this.ball.position.x - this.paddle2.position.x) < paddleXThreshold && this.ball.velocity.x > 0
       && Math.abs(this.ball.position.y - this.paddle2.position.y) >= paddleYThreshold
-      && Math.abs(this.ball.position.y - this.paddle2.position.y) <= (this.paddle1.height/2 + this.ball.radius)
+      && Math.abs(this.ball.position.y - this.paddle2.position.y) <= (this.paddle1.height/2 + this.ball.radius + 1)
       && this.ball.position.x < this.paddle2.position.x
       && (this.ball.position.y - this.paddle2.position.y) * this.ball.velocity.y < 0 )
       {
@@ -429,6 +446,13 @@ console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername(
         {
             this.ball.velocity.x *= 1.02;
             this.ball.velocity.y *= 1.02;
+        }
+
+          // 🎯 Hız maximum dan büyükük olmasın, top uçmasın
+      if (Math.sqrt(Math.pow(this.ball.velocity.x, 2) + Math.pow(this.ball.velocity.y, 2) ) > this.ball.maximumSpeed)
+        {
+            this.ball.velocity.x *= 1/1.02;
+            this.ball.velocity.y *= 1/1.02;
         }
 
 

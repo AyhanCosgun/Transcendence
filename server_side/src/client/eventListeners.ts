@@ -10,11 +10,7 @@ const setBoard = document.getElementById("setboard")!;
 
 export function initializeEventListeners(gameInfo: GameInfo)
 {
-  // LIMITS
-  //const upperLimit = (groundSize.height - paddleSize.height) / 2;
-  //const lowerLimit = -upperLimit;
-
-  if(gameInfo.mode === 'remoteGame' || 'vsAI')
+  if(gameInfo.mode === 'remoteGame' || gameInfo.mode === 'vsAI')
     {
       window.addEventListener("keydown", (event) => {
       let moved = false;
@@ -49,24 +45,24 @@ export function initializeEventListeners(gameInfo: GameInfo)
 
       if (event.key === 'w')
         {
-          socket.emit("local-input", { player: "left", direction: "up" });
+          socket.emit("local-input", { player_side: "left", direction: "up" });
            moved = true;
         }
         else if (event.key === 's')
           {
-            socket.emit("local-input", { player: "left", direction: "down" });
+            socket.emit("local-input", { player_side: "left", direction: "down" });
             moved = true;
           }
 
 
       if (event.key === 'ArrowUp')
         {
-          socket.emit("local-input", { player: "right", direction: "up" });
+          socket.emit("local-input", { player_side: "right", direction: "up" });
            moved = true;
         }
         else if (event.key === 'ArrowDown')
           {
-            socket.emit("local-input", { player: "right", direction: "down" });
+            socket.emit("local-input", { player_side: "right", direction: "down" });
             moved = true;
           }
 
@@ -78,10 +74,10 @@ export function initializeEventListeners(gameInfo: GameInfo)
       window.addEventListener("keyup", (e) =>
         {
           if (["w", "s"].includes(e.key))
-              socket.emit("local-input", { player: "left", direction: "stop" });
+              socket.emit("local-input", { player_side: "left", direction: "stop" });
           
           if (["ArrowUp", "ArrowDown"].includes(e.key))
-              socket.emit("local-input", { player: "right", direction: "stop" });
+              socket.emit("local-input", { player_side: "right", direction: "stop" });
         });
     }
 
@@ -95,7 +91,8 @@ export function initializeEventListeners(gameInfo: GameInfo)
   if(gameInfo.mode !== 'remoteGame')
   {
     document.addEventListener("keydown", (event) => {
-    if (event.code === "Space" && startButton.style.display == "none") {
+    if (event.code === "Space" && startButton.style.display == "none")
+      {
       gameInfo.state!.isPaused = !(gameInfo.state!.isPaused);
       socket.emit("game-state", gameInfo.state);
 

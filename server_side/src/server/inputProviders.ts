@@ -10,7 +10,7 @@ export interface InputProvider
    */
   getPaddleDelta(): number;
   getUsername(): String;
-  getSocket(): Socket | null;
+  getSocket?(): Socket;
 }
 
 /**
@@ -24,6 +24,7 @@ export class RemotePlayerInput implements InputProvider
     this.player = player;
     player.socket.on("player-move", ({ direction }: { direction: "up" | "down" | "stop" }) => {
       this.delta = direction === "up" ? +1 : direction === "down" ? -1 : 0;
+
     });
   }
   getPaddleDelta() { return this.delta; }
@@ -68,7 +69,6 @@ export class AIPlayerInput implements InputProvider
   }
 
   getUsername() { return this.username; }
-  getSocket() { return null;}
 }
 
 
@@ -82,11 +82,12 @@ export class LocalPlayerInput implements InputProvider
   {
     this.player = player;
     this.side = side;
-    player.socket.on("local-input", ({ player, direction }: { player: "left" | "right", direction: "up" | "down" | "stop" }) =>
+    player.socket.on("local-input", ({ player_side, direction }: { player_side: "left" | "right", direction: "up" | "down" | "stop" }) =>
 	{
-    console.log(``)
-		//if ((player === "left" && this.side === "left") || (player === "right" && this.side === "right"))
+    
+		if ((player_side === "left" && this.side === "left") || (player_side === "right" && this.side === "right"))
        this.delta = direction === "up" ? +1 : direction === "down" ? -1 : 0;
+
 	});
   }
 

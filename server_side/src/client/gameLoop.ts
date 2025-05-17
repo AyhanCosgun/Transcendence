@@ -14,7 +14,6 @@ export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo):
       ball.ball.position = new Vector3(gameInfo.ballState?.bp!.x, gameInfo.ballState?.bp!.y, 0);
       ball.velocity = new Vector3(gameInfo.ballState?.bv.x, gameInfo.ballState?.bv.y, 0);
       ball.ball.position.addInPlace(ball.velocity);
-
       // pedalları hareket ettir
       paddle1.position.y = gameInfo.paddle?.p1y!;
       paddle2.position.y = gameInfo.paddle?.p2y!;

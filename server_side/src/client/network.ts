@@ -49,7 +49,6 @@ diffDiv.querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
     const level = (btn as HTMLElement).dataset.level!;
     socket.emit("startWithAI", { level });
-    console.log(`${level} a TIKLANMIŞ`);
     game_mode = 'vsAI'; 
      diffDiv.classList.add("hidden"); 
     startButton.style.display = "block";
@@ -62,6 +61,8 @@ btnFindRival.addEventListener("click", () => {
   document.getElementById("menu")!.classList.add("hidden");
   socket.emit("findRival");
   game_mode = 'remoteGame';
+  startButton.style.display = "block";
+  startButton.innerHTML = "I am ready for match !";
   onModeSelected(game_mode);
 });
 
@@ -160,7 +161,6 @@ export function waitForGameInfoReady(gameInfo: GameInfo, socket: Socket): Promis
 
 		socket.on("gameConstants", (constants: GameConstants) => {
 			gameInfo.setConstants(constants);
-      console.log(`gameConstants GELDİ: ${constants.ballRadius}`);
 			tryResolve();
 		});
 
@@ -183,27 +183,6 @@ export function waitForGameInfoReady(gameInfo: GameInfo, socket: Socket): Promis
 }
 
 
-
-// export function prepareGameInfo(gameInfo: GameInfo, socket: Socket)
-// {
-
-// socket.on("gameConstants", (constants: GameConstants) => {
-//   gameInfo.setConstants(constants);
-// });
-
-// socket.on("gameState", (state: GameState) => {
-//   console.log(`game state geldi: ${state}`);
-//   gameInfo.setState(state);
-// });
-
-// socket.on("ballUpdate", (ballState: BallState) => {
-//   gameInfo.setBall(ballState);
-// });
-
-// socket.on("paddleUpdate", (paddle: PaddleState) => {
-//   gameInfo.setPaddle(paddle);
-// });
-// }
 export function prepareScoreBoards(gameInfo: GameInfo)
 {
 const blueTeam = document.getElementById("blue-team")!;
