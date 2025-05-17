@@ -10,6 +10,7 @@ export interface InputProvider
    */
   getPaddleDelta(): number;
   getUsername(): String;
+  getSocket(): Socket | null;
 }
 
 /**
@@ -22,19 +23,20 @@ export class RemotePlayerInput implements InputProvider
   constructor(player: Player) {
     this.player = player;
     player.socket.on("player-move", ({ direction }: { direction: "up" | "down" | "stop" }) => {
-      this.delta = direction === "up" ? -1 : direction === "down" ? 1 : 0;
+      this.delta = direction === "up" ? +1 : direction === "down" ? -1 : 0;
     });
   }
   getPaddleDelta() { return this.delta; }
   getUsername() { return this.player.username; }
+   getSocket() { return this.player.socket;}
 }
 
 
 export class AIPlayerInput implements InputProvider
 {
-  private username: string;
-  private level: string = "medium";
-  constructor(private readonly getGame: () => Game, private readonly getPaddle: () => Paddle, username: string, level: string)
+  private username: String;
+  private level: String = "medium";
+  constructor(private readonly getGame: () => Game, private readonly getPaddle: () => Paddle, username: String, level: string)
   {
     this.username = username;
     this.level = level; /////Bunu işleyeceğiz ******************************************************************************************************************************************
@@ -66,26 +68,37 @@ export class AIPlayerInput implements InputProvider
   }
 
   getUsername() { return this.username; }
+  getSocket() { return null;}
 }
 
 
 export class LocalPlayerInput implements InputProvider
 {
   private delta: number = 0;
-  private username: String;
+   private player: Player;
+   private side: String;
 
-  constructor(username : String)
+  constructor(player : Player, side: String)
   {
-    this.username = username;
-  }
-
-  updateDirection(direction: "up" | "down" | "stop") {
-    this.delta = direction === "up" ? 1 : direction === "down" ? -1 : 0;
+    this.player = player;
+    this.side = side;
+    player.socket.on("local-input", ({ player, direction }) =>
+	{
+		if ((player === "left" && this.side === "left") || (player === "right" && this.side === "right"))
+       this.delta = direction === "up" ? 1 : direction === "down" ? -1 : 0;
+	});
   }
 
   getPaddleDelta(): number {
     return this.delta;
   }
 
-  getUsername() { return this.username; }
+  getUsername()
+  {
+    if (this.side ==="left")
+      return this.player.username;
+    else 
+      return ("friend");
+  }
+  getSocket() { return this.player.socket;}
 }

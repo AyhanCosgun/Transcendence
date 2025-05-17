@@ -1,16 +1,18 @@
-import { Engine, Scene } from "@babylonjs/core";
+import { Engine, Scene, Vector3 } from "@babylonjs/core";
 import {updateScoreBoard, updateSetBoard } from "./ui";
-import { ball, paddle1, paddle2, gameInfo  } from "./main";
+import { ball, paddle1, paddle2 } from "./main";
+import { GameInfo } from "./network";
 
-export function startGameLoop(engine: Engine, scene: Scene): void
+export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo): void
 {
     engine.runRenderLoop(() => {
-        if(!gameInfo.isReady()) return;
         if (gameInfo.state?.matchOver) return;
         if (gameInfo.state?.setOver) return;
         if (gameInfo.state?.isPaused) return;
      
         // Topu hareket ettir
+      ball.ball.position = new Vector3(gameInfo.ballState?.bp!.x, gameInfo.ballState?.bp!.y, 0);
+      ball.velocity = new Vector3(gameInfo.ballState?.bv.x, gameInfo.ballState?.bv.y, 0);
       ball.ball.position.addInPlace(ball.velocity);
 
       // pedalları hareket ettir
@@ -18,8 +20,8 @@ export function startGameLoop(engine: Engine, scene: Scene): void
       paddle2.position.y = gameInfo.paddle?.p2y!;
 
       //skor ve set güncellemesi
-      updateScoreBoard();
-      updateSetBoard();
+      updateScoreBoard(gameInfo);
+      updateSetBoard(gameInfo);
    
         scene.render();
       });

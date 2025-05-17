@@ -1,27 +1,28 @@
-import {  gameInfo } from "./main";
-import { GameInfo, prepareGameInfo, gameMode} from "./network";
+
+import { GameInfo, prepareScoreBoards} from "./network";
 import { Socket } from "socket.io-client";
 import { initializeEventListeners } from "./eventListeners";
+import { startButton } from "./main";
 
 const scoreBoard = document.getElementById("scoreboard")!;
 const setBoard = document.getElementById("setboard")!;
 const scoreTable = document.getElementById("score-table")!;
 const setTable = document.getElementById("set-table")!;
-const startButton = document.getElementById("start-button")!;
+export const endMsg = document.getElementById("end-message")!;
 
 
 
 // MAÇ VE SET AYARLAMA
 type Player = 'player1' | 'player2';
 
-export function updateScoreBoard()
+export function updateScoreBoard(gameInfo: GameInfo)
 {
-   scoreTable.innerText = `${gameInfo.ballState!.points.player1}  :  ${gameInfo.ballState!.points.player2}`;
+   scoreTable.innerText = `${gameInfo.ballState!.points.leftPlayer}  :  ${gameInfo.ballState!.points.rightPlayer}`;
 }
 
-export function updateSetBoard()
+export function updateSetBoard(gameInfo: GameInfo)
 {
-    setTable.innerText = `${gameInfo.ballState!.sets.player1}  :  ${gameInfo.ballState!.sets.player2}`;
+    setTable.innerText = `${gameInfo.ballState!.sets.leftPlayer}  :  ${gameInfo.ballState!.sets.rightPlayer}`;
 }
 
 
@@ -29,57 +30,56 @@ export function updateSetBoard()
 
 // OYUN FONKSİYONLARI
 
-export function createGame(socket: Socket, mode: gameMode): GameInfo
+export function createGame(socket: Socket, gameInfo: GameInfo)
 {
     endMsg.style.display = "none";
     startButton.style.display = "none";
     scoreBoard.style.display = "flex";
     setBoard.style.display = "flex";
     
-  const gameInfo = new GameInfo(mode);
-  prepareGameInfo(socket);
-  initializeEventListeners();
+  
+  //prepareGameInfo(gameInfo, socket);
+  prepareScoreBoards(gameInfo);
+  initializeEventListeners(gameInfo);
   gameInfo.state!.matchOver = false;
   gameInfo.state!.isPaused = false;
-  updateScoreBoard();
-  updateSetBoard();
-
-  return gameInfo;
+  socket.emit("game-state", gameInfo.state);
+  updateScoreBoard(gameInfo);
+  updateSetBoard(gameInfo);
 }
 
 
-export function showSetToast(message: string): Promise<void>
-{
-  return new Promise((resolve) => {
-    const toast = document.getElementById("set-toast")!;
-    toast.textContent = message;
-    toast.style.opacity = "1";
-    gameInfo.state!.setOver = true;
+// export function showSetToast(gameInfo: GameInfo, message: string): Promise<void>
+// {
+//   return new Promise((resolve) => {
+//     const toast = document.getElementById("set-toast")!;
+//     toast.textContent = message;
+//     toast.style.opacity = "1";
+//     gameInfo.state!.setOver = true;
 
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      gameInfo.state!.setOver = false;
-      resolve();
-    }, 3000);
-  });
-}
-
-
-export async function startNextSet(message: string)
-{
-  await showSetToast(message);  // 3 saniye bekler
-}
+//     setTimeout(() => {
+//       toast.style.opacity = "0";
+//       gameInfo.state!.setOver = false;
+//       resolve();
+//     }, 3000);
+//   });
+// }
 
 
+// export async function startNextSet(message: string)
+// {
+//   await showSetToast(message);  // 3 saniye bekler
+// }
 
-export const endMsg = document.getElementById("end-message")!;
 
-export function showEndMessage(message: string) {
+
+
+// export function showEndMessage(message: string) {
   
-  endMsg.textContent = message;
-  endMsg.style.display = "flex";
-  if (startButton) {
-    startButton.style.display = "inline-block";
-    startButton.textContent = "Yeni Maça Başla";
-  }
-}
+//   endMsg.textContent = message;
+//   endMsg.style.display = "flex";
+//   if (startButton) {
+//     startButton.style.display = "inline-block";
+//     startButton.textContent = "Yeni Maça Başla";
+//   }
+// }

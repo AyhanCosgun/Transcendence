@@ -29,28 +29,37 @@ const players = new Map<string, Player>();
 
 io.on("connection", socket =>
 {
-  socket.once("username", ({ username }) => {
-    //oyuncuyu kaydet
-    players.set(socket.id, { socket, username });
-    const player = players.get(socket.id);
+  console.log(`Bağlatı sağlandı: socket.id = ${socket.id}`);
+  socket.once("username", ({ username }) =>
+    {
+   
+    const player: Player = { socket, username };
+    players.set(socket.id, player);
+    console.log(`oyuncu players a kaydedildi, player.socket.id = ${player.socket.id}`);
 
   socket.on("startWithAI", ({ level }) => {
     // Direkt AI modu başlat
-    startGameWithAI(player!, level, io);
+    startGameWithAI(player, level, io);
   });
 
   socket.on("findRival", () => {
-    addPlayerToQueue(player!, io);
+    addPlayerToQueue(player, io);
   });
 
   socket.on("localGame", () => {
-    startLocalGame(player!, io);
+    startLocalGame(player, io);
   });
 
   socket.on("disconnect", () => {
-    removePlayerFromQueue(player!);
-    players.delete(player!.socket.id);
+    removePlayerFromQueue(player);
+    players.delete(player.socket.id);
   });
 
-});
+  });
+
+  socket.on("disconnect", () =>
+    {
+    if (players.has(socket.id)) return; // Zaten yukarıda temizlenecek
+    console.log(`[Server] Unregistered socket disconnected: ${socket.id}`);
+    });
 });

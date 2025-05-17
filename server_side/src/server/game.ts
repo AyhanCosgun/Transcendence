@@ -8,6 +8,34 @@ const UNIT = 40;
 type Player = 'leftPlayer' | 'rightPlayer';
 
 
+interface GameConstants {
+  groundWidth: number;
+  groundHeight: number;
+  ballRadius: number;
+  paddleWidth: number;
+  paddleHeight: number;
+}
+
+interface GameState {
+  matchOver: boolean;
+  setOver: boolean;
+  isPaused: boolean;
+}
+
+
+interface BallState {
+  bp: {x: number, y: number};
+  bv: {x: number, y: number};
+  points: { leftPlayer: number, rightPlayer: number };
+  sets: { leftPlayer: number, rightPlayer: number };
+  usernames: {left: String, right: String}
+}
+
+interface PaddleState {
+  p1y: number;
+  p2y: number;
+}
+
 interface Position
 {
   x : number;
@@ -54,13 +82,13 @@ export class Game
 
   private roomId: string;
   private io: Server;
-  private interval: NodeJS.Timeout;
+  private interval!: NodeJS.Timeout;
 
   constructor( private leftInput: InputProvider, private rightInput: InputProvider, io: Server, roomId: string)
   {
     this.ball = 
     {
-        firstSpeedFactor: 0.15*UNIT,
+        firstSpeedFactor: 0.18*UNIT,
         airResistanceFactor: 0.998,
         minimumSpeed: 0.15*UNIT,
         radius: 0.25*UNIT,
@@ -94,15 +122,13 @@ export class Game
         y : 0 }
     };
 
-    this.paddleSpeed = 1*UNIT;
+    this.paddleSpeed = 0.2*UNIT;
 
     this.points = { leftPlayer: 0, rightPlayer: 0 };
     this.sets = { leftPlayer: 0, rightPlayer: 0 };
 
     this.io = io;
     this.roomId = roomId;
-    this.exportGameConstants();
-    //this.listenForMoves();
   }
 
   public getBall()
@@ -127,7 +153,7 @@ export class Game
 
   private exportGameConstants()
   {
-     const gameConstants = 
+     const gameConstants: GameConstants = 
      {
        groundWidth: this.ground.width/UNIT,
        groundHeight: this.ground.height/UNIT,
@@ -142,11 +168,15 @@ export class Game
 
 
   public startGameLoop() {
+console.log(`startGameLoop çalıştı, leftinput: ${this.leftInput.getUsername()}   rightinput: ${this.rightInput.getUsername()}`)
+
+    this.exportGameConstants();
+
     this.matchOver = false;
     this.setOver = false;
     this.isPaused = false;
 
-    const gameState = 
+    const gameState : GameState = 
     {
       matchOver: this.matchOver,
       setOver: this.setOver,
@@ -155,7 +185,7 @@ export class Game
 
      this.io.to(this.roomId).emit("gameState", gameState);
 
-    this.interval = setInterval(() => this.update(), 1000 / 60); // 60 FPS
+    this.interval = setInterval(() => this.update(), 1000 / 160); // 60 FPS
   }
 
   // private listenForMoves() {
@@ -191,7 +221,7 @@ export class Game
   private resetBall(lastScorer: "leftPlayer" | "rightPlayer")
   {
     this.ball.firstPedalHit = 0;
-    this.ball.speedIncreaseFactor = 1.7*UNIT;
+    this.ball.speedIncreaseFactor = 1.7;
     this.ball.minimumSpeed = this.ball.firstSpeedFactor;
     // 🎯 Önce topu durdur
     this.ball.velocity = {x:0, y:0};
@@ -250,6 +280,12 @@ export class Game
 
   private update()
   {
+    // this.leftInput.getSocket()!.on("game-state", (data: boolean) =>
+    // {
+    //   this.matchOver = data;
+
+    // });
+    
     if (this.matchOver) return;
     if (this.setOver) return;
     if (this.isPaused) return;
@@ -260,10 +296,13 @@ export class Game
     this.ball.position.y += this.ball.velocity.y;
 
     //pedal hareketi
+    const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
     const deltaY1 = this.leftInput.getPaddleDelta() * this.paddleSpeed;
     const deltaY2 = this.rightInput.getPaddleDelta() * this.paddleSpeed;
-    this.paddle1.position.y += deltaY1;
-    this.paddle2.position.y += deltaY2;
+    if (Math.abs(this.paddle1.position.y + deltaY1) <= upperBound)
+        this.paddle1.position.y += deltaY1;
+    if (Math.abs(this.paddle2.position.y + deltaY2) <= upperBound)
+        this.paddle2.position.y += deltaY2;
 
 
 
@@ -296,7 +335,7 @@ export class Game
       if (this.ball.firstPedalHit++)
         {
           this.ball.speedIncreaseFactor = 1.2;
-          this.ball.minimumSpeed = 0.2;
+          this.ball.minimumSpeed = 0.2*UNIT;
         }
     
         // 🎯 HIZI ARTTIR
@@ -354,11 +393,11 @@ export class Game
 
 
       // 🎯 Skor kontrolü
-      if (this.ball.position.x > this.ground.width/2 + 5)
+      if (this.ball.position.x > this.ground.width/2 + 5*UNIT)
         {
           this.scorePoint('leftPlayer');
         }
-      else if (this.ball.position.x < -this.ground.width/2 - 5)
+      else if (this.ball.position.x < -this.ground.width/2 - 5*UNIT)
         {
           this.scorePoint('rightPlayer');
         }
@@ -378,19 +417,26 @@ export class Game
 
 
     // Pozisyonları yayınla
-    this.io.to(this.roomId).emit("ballUpdate", {
-      bp: { x: this.ball.position.x / UNIT, y : this.ball.position.y / UNIT},
-      bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
-      score: this.points,
-      sets: this.sets,
-      usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()}
-    });
+        const ballState: BallState =
+        {
+          bp: { x: this.ball.position.x / UNIT, y : this.ball.position.y / UNIT},
+          bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
+          points: this.points,
+          sets: this.sets,
+          usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()}
+        };
 
-    this.io.to(this.roomId).emit("paddleUpdate", {
+    this.io.to(this.roomId).emit("ballUpdate", ballState);
+
+    const paddleState: PaddleState =
+    {
       p1y: this.paddle1.position.y/UNIT,
       p2y: this.paddle2.position.y/UNIT
-    });
+    }
+
+    this.io.to(this.roomId).emit("paddleUpdate", paddleState);
   }
+
 
 }
 

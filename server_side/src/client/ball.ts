@@ -1,6 +1,6 @@
 // BallController.ts
 import { Mesh, MeshBuilder, Scene, StandardMaterial, Color3, Vector3 } from "@babylonjs/core";
-import { gameInfo } from "./main";
+import { GameInfo } from "./network";
 
 
 export class BallController
@@ -10,7 +10,7 @@ export class BallController
   position: {x: number, y: number};
 
 
-  constructor(scene: Scene)
+  constructor(scene: Scene, gameInfo: GameInfo)
   {
     this.ball = MeshBuilder.CreateSphere("ball", { diameter: 2 * gameInfo.constants?.ballRadius! }, scene);
     const ballMaterial = new StandardMaterial("ballMaterial", scene);
@@ -18,6 +18,6 @@ export class BallController
     this.ball.material = ballMaterial;
 
     this.velocity = new Vector3(gameInfo.ballState?.bv.x, gameInfo.ballState?.bv.y, 0);
-    this.position = gameInfo.ballState?.bp!;
+    this.position = new Vector3(gameInfo.ballState?.bp!.x, gameInfo.ballState?.bp!.y, 0);
   }
 }

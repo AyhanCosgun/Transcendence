@@ -1,20 +1,20 @@
 import { updateScoreBoard, updateSetBoard, endMsg } from "./ui";
-import { gameInfo, socket } from "./main";
+import { socket, startButton } from "./main";
+import { GameInfo } from "./network";
 
 
-const startButton = document.getElementById("start-button")!;
+//const startButton = document.getElementById("start-button")!;
 const scoreBoard = document.getElementById("scoreboard")!;
 const setBoard = document.getElementById("setboard")!;
 
 
-
-export function initializeEventListeners()
+export function initializeEventListeners(gameInfo: GameInfo)
 {
   // LIMITS
   //const upperLimit = (groundSize.height - paddleSize.height) / 2;
   //const lowerLimit = -upperLimit;
 
-  if(gameInfo.mode === 'remoteGame')
+  if(gameInfo.mode === 'remoteGame' || 'vsAI')
     {
       window.addEventListener("keydown", (event) => {
       let moved = false;
@@ -85,15 +85,19 @@ export function initializeEventListeners()
         });
     }
 
+
   // ******************************************************************************************************************************************************************************
   
 
   const resumeButton = document.getElementById("resume-button") as HTMLButtonElement;
   const newmatchButton = document.getElementById("newmatch-button") as HTMLButtonElement;
  
-  document.addEventListener("keydown", (event) => {
+  if(gameInfo.mode !== 'remoteGame')
+  {
+    document.addEventListener("keydown", (event) => {
     if (event.code === "Space" && startButton.style.display == "none") {
       gameInfo.state!.isPaused = !(gameInfo.state!.isPaused);
+      socket.emit("game-state", gameInfo.state);
 
       if (gameInfo.state!.isPaused) {
         // Duraklatıldığında "devam et" butonunu göster
@@ -111,6 +115,7 @@ export function initializeEventListeners()
 
   resumeButton?.addEventListener("click", () => {
     gameInfo.state!.isPaused = false;
+    socket.emit("game-state", gameInfo.state);
     resumeButton.style.display = "none";
     newmatchButton.style.display = "none";
   });
@@ -128,13 +133,11 @@ export function initializeEventListeners()
 
          gameInfo.state!.matchOver = false;
           gameInfo.state!.isPaused = false;
-          updateScoreBoard();
-          updateSetBoard();
+          socket.emit("game-state", gameInfo.state);
+          updateScoreBoard(gameInfo);
+          updateSetBoard(gameInfo);
   });
-  
-
-
+  }
 }
-
 
 

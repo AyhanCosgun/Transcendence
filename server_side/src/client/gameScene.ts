@@ -1,6 +1,7 @@
 import {FreeCamera, Scene, ArcRotateCamera, HemisphericLight, MeshBuilder, Vector3, Color3,
   StandardMaterial, Engine} from "@babylonjs/core";
-import { groundSize, gameInfo } from "./main";
+import { groundSize} from "./main";
+import { GameInfo } from "./network";
 
 // 🎮 Kamera ve ışık
 export function createCamera(scene: Scene)
@@ -35,7 +36,7 @@ if (!canvas) {
 
 
 // 🎮 Zemin
-export function createGround(scene: Scene)
+export function createGround(scene: Scene, gameInfo: GameInfo)
 {
   const width = gameInfo.constants?.groundWidth!;
   const groundSize = { width: width, height: width*(152.5)/274 };
@@ -50,7 +51,7 @@ export function createGround(scene: Scene)
 
 
 // 🎮 Paddle'lar ve top
-export function createPaddles(scene: Scene)
+export function createPaddles(scene: Scene, gameInfo: GameInfo)
 {
   const wi = gameInfo.constants?.paddleWidth!;
   const paddleSize = { width: wi, height: groundSize.height*(0.3), depth: 0.5 };
@@ -73,7 +74,7 @@ export function createPaddles(scene: Scene)
   paddle2Material.emissiveColor = new Color3(0.5, 0, 0);
   paddle2.material = paddle2Material;
 
-  return { paddle1, paddle2, paddleSize };
+  return { paddle1, paddle2};
 }
 
 
