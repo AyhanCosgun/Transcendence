@@ -85,7 +85,7 @@ export class Game
 
   private roomId: string;
   private io: Server;
-  private interval!: NodeJS.Timeout;
+  private interval!: NodeJS.Timeout | undefined;
 
   constructor( private leftInput: InputProvider, private rightInput: InputProvider, io: Server, roomId: string)
   {
@@ -155,56 +155,6 @@ export class Game
     return this.paddle2;
   }
 
-  private exportGameConstants()
-  {
-     const gameConstants: GameConstants = 
-     {
-       groundWidth: this.ground.width/UNIT,
-       groundHeight: this.ground.height/UNIT,
-       ballRadius: this.ball.radius/UNIT,
-       paddleWidth: this.paddle1.width/UNIT,
-       paddleHeight: this.paddle1.height/UNIT
-      };
-
-      this.io.to(this.roomId).emit("gameConstants", gameConstants);
-  }
-
-
-
-  public startGameLoop() {
-    console.log(`startGameLoop içine geldim`);
-
-    this.exportGameConstants();
-
-    this.matchOver = false;
-    this.setOver = false;
-    this.isPaused = false;
-
-    const gameState : GameState = 
-    {
-      matchOver: this.matchOver,
-      setOver: this.setOver,
-      isPaused: this.isPaused,
-     };
-
-     this.io.to(this.roomId).emit("gameState", gameState);
-     if(this.isPaused === false)
-       {
-         Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
-       }
-
-    this.interval = setInterval(() => this.update(), 1000 / 120); // 60 FPS
-  }
-
-  // private listenForMoves() {
-  //   this.player1.on("move", (data) => {
-  //     this.paddle1.position.y = data.y;
-  //   });
-
-  //   this.player2.on("move", (data) => {
-  //     this.paddle2.position.y = data.y;
-  //   });
-  // }
 
   private resetScores()
   {
@@ -286,29 +236,121 @@ export class Game
     }
   }
 
-  private update()
+  private exportGameConstants()
   {
-    this.leftInput.getSocket!().on("game-state", (state: GameState) =>
-    {//console.log(`game-state bildirimi geldi: isPaused = ${state.isPaused}`);
-      this.matchOver = state.matchOver;
-      this.setOver = state.setOver;
-      this.isPaused = state.isPaused;
-
-    });
-      if(this.rightInput.getUsername() !== "AI")
+     const gameConstants: GameConstants = 
      {
-          this.rightInput.getSocket!().on("game-state", (state: GameState) =>
-        {
-          this.matchOver = state.matchOver;
-          this.setOver = state.setOver;
-          this.isPaused = state.isPaused;
+       groundWidth: this.ground.width/UNIT,
+       groundHeight: this.ground.height/UNIT,
+       ballRadius: this.ball.radius/UNIT,
+       paddleWidth: this.paddle1.width/UNIT,
+       paddleHeight: this.paddle1.height/UNIT
+      };
 
+      this.io.to(this.roomId).emit("gameConstants", gameConstants);
+  }
+
+public pauseGameLoop()
+{
+  if (this.interval) {
+    clearInterval(this.interval);
+    this.interval = undefined;
+  }
+  this.isPaused = true;
+
+  const gameState : GameState = 
+    {
+      matchOver: this.matchOver,
+      setOver: this.setOver,
+      isPaused: this.isPaused,
+     };
+
+     this.io.to(this.roomId).emit("gameState", gameState);
+}
+
+public resumeGameLoop() {
+  if (!this.interval) {
+    this.interval = setInterval(() => this.update(), 1000 / 120);
+  }
+  this.isPaused = false;
+
+  this.io.to(this.roomId).emit("gameState", {
+    matchOver: this.matchOver,
+    setOver: this.setOver,
+    isPaused: this.isPaused
+  });
+}
+
+
+  public startGameLoop()
+  {
+    console.log(`startGameLoop içine geldim`);
+
+    this.exportGameConstants();
+
+    this.matchOver = false;
+    this.setOver = false;
+    this.isPaused = false;
+
+    const gameState : GameState = 
+    {
+      matchOver: this.matchOver,
+      setOver: this.setOver,
+      isPaused: this.isPaused,
+     };
+
+     this.io.to(this.roomId).emit("gameState", gameState);
+    
+    
+     if (typeof this.leftInput.getSocket === 'function')
+      {
+        this.leftInput.getSocket()!.on("game-state", (data: {state: GameState, status: String}) =>
+        {
+          if (data.status === "stable")
+          {
+            console.log(`game-state bildirimi geldi: isPaused = ${data.state.isPaused}`);
+            this.matchOver = data.state.matchOver;
+            this.setOver = data.state.setOver;
+            this.isPaused = data.state.isPaused;
+          }
+          else if (data.status === "pause")
+            this.pauseGameLoop();
+          else if (data.status === "resume")
+            this.resumeGameLoop();
+          
         });
       }
-    
-    if (this.matchOver) return;
-    if (this.setOver) return;
-    if (this.isPaused) return;
+
+   console.log(`typeof this.rightInput.getSocket = ${typeof this.rightInput.getSocket}`);
+    //   if(this.rightInput.getUsername() !== "AI")
+    //  {
+    //       this.rightInput.getSocket!().on("game-state", (state: GameState) =>
+    //     {
+    //       this.matchOver = state.matchOver;
+    //       this.setOver = state.setOver;
+    //       this.isPaused = state.isPaused;
+
+    //     });
+    //   }
+
+     if(this.isPaused === false)
+       {
+         Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
+       }
+
+    this.interval = setInterval(() => this.update(), 1000 / 120); // 60 FPS
+  }
+
+
+  private update()
+  {  
+    if (this.matchOver){console.log(`update dönüyor, this.matchOver = ${this.matchOver} `);  return;}
+    if (this.setOver) {console.log(`update dönüyor,this.setOver = ${this.setOver} `);  return;}
+    if (this.isPaused){
+       if (this.interval) {
+        clearInterval(this.interval);
+      }
+      console.log(`update dönüyor, this.isPaused = ${this.isPaused} `);  return;}
 
     let timeDifferenceMultiplier = 1;
 

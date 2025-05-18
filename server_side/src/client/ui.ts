@@ -43,7 +43,7 @@ export function createGame(socket: Socket, gameInfo: GameInfo)
   initializeEventListeners(gameInfo);
   gameInfo.state!.matchOver = false;
   gameInfo.state!.isPaused = false;
-  socket.emit("game-state", gameInfo.state);
+  socket.emit("game-state", {state: gameInfo.state, status: "stable"}); // ????????? şu anda bunu alan yok !!
   updateScoreBoard(gameInfo);
   updateSetBoard(gameInfo);
 }

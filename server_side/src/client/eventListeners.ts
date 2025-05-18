@@ -94,13 +94,15 @@ export function initializeEventListeners(gameInfo: GameInfo)
     if (event.code === "Space" && startButton.style.display == "none")
       {
       gameInfo.state!.isPaused = !(gameInfo.state!.isPaused);
-      socket.emit("game-state", gameInfo.state);
+      //socket.emit("game-state", {state: gameInfo.state, status: "stable"});
 
       if (gameInfo.state!.isPaused) {
+        socket.emit("game-state", {state: gameInfo.state, status: "pause"});
         // Duraklatıldığında "devam et" butonunu göster
         resumeButton.style.display = "block";
         newmatchButton.style.display = "block";
       } else {
+        socket.emit("game-state", {state: gameInfo.state, status: "resume"});
         // Devam edildiğinde butonu gizle
         resumeButton.style.display = "none";
         newmatchButton.style.display = "none";
@@ -112,7 +114,7 @@ export function initializeEventListeners(gameInfo: GameInfo)
 
   resumeButton?.addEventListener("click", () => {
     gameInfo.state!.isPaused = false;
-    socket.emit("game-state", gameInfo.state);
+    socket.emit("game-state", {state: gameInfo.state, status: "resume"});
     resumeButton.style.display = "none";
     newmatchButton.style.display = "none";
   });
@@ -130,7 +132,7 @@ export function initializeEventListeners(gameInfo: GameInfo)
 
          gameInfo.state!.matchOver = false;
           gameInfo.state!.isPaused = false;
-          socket.emit("game-state", gameInfo.state);
+          socket.emit("game-state", {state: gameInfo.state, status: "stable"});
           updateScoreBoard(gameInfo);
           updateSetBoard(gameInfo);
   });
