@@ -83,6 +83,9 @@ export class Game
   private isPaused = true;
   private lastUpdatedTime: number = 0; /* ms */
 
+  private savedBallVelocity: { x: number; y: number } | null = null;
+  private isInputFrozen = false;
+
   private roomId: string;
   private io: Server;
   private interval!: NodeJS.Timeout | undefined;
@@ -250,42 +253,62 @@ export class Game
       this.io.to(this.roomId).emit("gameConstants", gameConstants);
   }
 
-public pauseGameLoop()
-{
-  if (this.interval) {
-    clearInterval(this.interval);
-    this.interval = undefined;
-  }
-  this.isPaused = true;
+// public pauseGameLoop()
+// {
+//   if (this.interval) {
+//     clearInterval(this.interval);
+//     this.interval = undefined;
+//   }
+//   this.isPaused = true;
 
-  const gameState : GameState = 
-    {
-      matchOver: this.matchOver,
-      setOver: this.setOver,
-      isPaused: this.isPaused,
-     };
+//   const gameState : GameState = 
+//     {
+//       matchOver: this.matchOver,
+//       setOver: this.setOver,
+//       isPaused: this.isPaused,
+//      };
 
-     this.io.to(this.roomId).emit("gameState", gameState);
+//      this.io.to(this.roomId).emit("gameState", gameState);
+// }
+
+// public resumeGameLoop() {
+//   if (!this.interval) {
+//     this.interval = setInterval(() => this.update(), 1000 / 120);
+//   }
+//   this.isPaused = false;
+
+//   this.io.to(this.roomId).emit("gameState", {
+//     matchOver: this.matchOver,
+//     setOver: this.setOver,
+//     isPaused: this.isPaused
+//   });
+// }
+
+
+private freezeGame() {
+  // 1) Topun hızını sakla ve sıfırla
+  this.savedBallVelocity = { ...this.ball.velocity };
+  this.ball.velocity = { x: 0, y: 0 };
+
+  // 2) Paddle girdilerini dondur
+  this.isInputFrozen = true;
 }
 
-public resumeGameLoop() {
-  if (!this.interval) {
-    this.interval = setInterval(() => this.update(), 1000 / 120);
+private unfreezeGame() {
+  // 1) Topun hızını geri yükle
+  if (this.savedBallVelocity) {
+    this.ball.velocity = this.savedBallVelocity;
+    this.savedBallVelocity = null;
   }
-  this.isPaused = false;
 
-  this.io.to(this.roomId).emit("gameState", {
-    matchOver: this.matchOver,
-    setOver: this.setOver,
-    isPaused: this.isPaused
-  });
+  // 2) Paddle girdilerini tekrar aç
+  this.isInputFrozen = false;
 }
+
 
 
   public startGameLoop()
   {
-    console.log(`startGameLoop içine geldim`);
-
     this.exportGameConstants();
 
     this.matchOver = false;
@@ -308,49 +331,57 @@ public resumeGameLoop() {
         {
           if (data.status === "stable")
           {
-            console.log(`game-state bildirimi geldi: isPaused = ${data.state.isPaused}`);
             this.matchOver = data.state.matchOver;
             this.setOver = data.state.setOver;
             this.isPaused = data.state.isPaused;
           }
-          else if (data.status === "pause")
-            this.pauseGameLoop();
-          else if (data.status === "resume")
-            this.resumeGameLoop();
+          else if (data.status === "pause" && !this.isPaused)
+            this.freezeGame();
+          else if (data.status === "resume" && this.isPaused)
+            this.unfreezeGame();
+            
+            this.isPaused  = data.state.isPaused;
+            this.matchOver = data.state.matchOver;
+            this.setOver   = data.state.setOver;
           
         });
       }
 
-   console.log(`typeof this.rightInput.getSocket = ${typeof this.rightInput.getSocket}`);
-    //   if(this.rightInput.getUsername() !== "AI")
-    //  {
-    //       this.rightInput.getSocket!().on("game-state", (state: GameState) =>
-    //     {
-    //       this.matchOver = state.matchOver;
-    //       this.setOver = state.setOver;
-    //       this.isPaused = state.isPaused;
+      if (typeof this.rightInput.getSocket === 'function')
+      {
+             this.rightInput.getSocket()!.on("game-state", (data: {state: GameState, status: String}) =>
+        {
+          if (data.status === "stable")
+          {
+            this.matchOver = data.state.matchOver;
+            this.setOver = data.state.setOver;
+            this.isPaused = data.state.isPaused;
+          }
+          else if (data.status === "pause" && !this.isPaused)
+            this.freezeGame();
+          else if (data.status === "resume" && this.isPaused)
+            this.unfreezeGame();
+            
+            this.isPaused  = data.state.isPaused;
+            this.matchOver = data.state.matchOver;
+            this.setOver   = data.state.setOver;
+          
+        });;
+      }
 
-    //     });
-    //   }
 
      if(this.isPaused === false)
        {
          Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
        }
 
-    this.interval = setInterval(() => this.update(), 1000 / 120); // 60 FPS
+    this.interval = setInterval(() => {if(!this.isInputFrozen) this.update();}, 1000 / 120); // 120 FPS
   }
 
 
   private update()
   {  
-    if (this.matchOver){console.log(`update dönüyor, this.matchOver = ${this.matchOver} `);  return;}
-    if (this.setOver) {console.log(`update dönüyor,this.setOver = ${this.setOver} `);  return;}
-    if (this.isPaused){
-       if (this.interval) {
-        clearInterval(this.interval);
-      }
-      console.log(`update dönüyor, this.isPaused = ${this.isPaused} `);  return;}
+    if (this.matchOver || this.setOver || this.isPaused) return;
 
     let timeDifferenceMultiplier = 1;
 
@@ -367,17 +398,19 @@ public resumeGameLoop() {
     
     
     // Top hareketi
-    this.ball.position.x += this.ball.velocity.x*timeDifferenceMultiplier;
-    this.ball.position.y += this.ball.velocity.y*timeDifferenceMultiplier;
+    if (!this.isInputFrozen)
+    {this.ball.position.x += this.ball.velocity.x*timeDifferenceMultiplier;
+    this.ball.position.y += this.ball.velocity.y*timeDifferenceMultiplier;}
 
     //pedal hareketi
-    const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
+    if (!this.isInputFrozen)
+  {  const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
     const deltaY1 = this.leftInput.getPaddleDelta() * this.paddleSpeed;
     const deltaY2 = this.rightInput.getPaddleDelta() * this.paddleSpeed;
     if (Math.abs(this.paddle1.position.y + deltaY1) <= upperBound)
         this.paddle1.position.y += deltaY1;
     if (Math.abs(this.paddle2.position.y + deltaY2) <= upperBound)
-        this.paddle2.position.y += deltaY2;
+        this.paddle2.position.y += deltaY2;}
 
 
 
