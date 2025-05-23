@@ -2,10 +2,9 @@ import { updateScoreBoard, updateSetBoard, endMsg } from "./ui";
 import { socket, startButton } from "./main";
 import { GameInfo } from "./network";
 
-
-//const startButton = document.getElementById("start-button")!;
 const scoreBoard = document.getElementById("scoreboard")!;
 const setBoard = document.getElementById("setboard")!;
+export const newmatchButton = document.getElementById("newmatch-button") as HTMLButtonElement;
 
 
 export function initializeEventListeners(gameInfo: GameInfo)
@@ -86,7 +85,6 @@ export function initializeEventListeners(gameInfo: GameInfo)
   
 
   const resumeButton = document.getElementById("resume-button") as HTMLButtonElement;
-  const newmatchButton = document.getElementById("newmatch-button") as HTMLButtonElement;
  
   if(gameInfo.mode !== 'remoteGame')
   {
@@ -94,8 +92,7 @@ export function initializeEventListeners(gameInfo: GameInfo)
     if (event.code === "Space" && startButton.style.display == "none")
       {
       gameInfo.state!.isPaused = !(gameInfo.state!.isPaused);
-      //socket.emit("game-state", {state: gameInfo.state, status: "stable"});
-
+      
       if (gameInfo.state!.isPaused) {
         socket.emit("game-state", {state: gameInfo.state, status: "pause"});
         // Duraklatıldığında "devam et" butonunu göster
@@ -112,7 +109,8 @@ export function initializeEventListeners(gameInfo: GameInfo)
   });
 
 
-  resumeButton?.addEventListener("click", () => {
+  resumeButton?.addEventListener("click", () =>
+  {
     gameInfo.state!.isPaused = false;
     socket.emit("game-state", {state: gameInfo.state, status: "resume"});
     resumeButton.style.display = "none";
@@ -121,21 +119,31 @@ export function initializeEventListeners(gameInfo: GameInfo)
 
 
 
-  newmatchButton?.addEventListener("click", () => {
+  newmatchButton?.addEventListener("click", () =>
+    {
     resumeButton.style.display = "none";
     newmatchButton.style.display = "none";
+    if (startButton)
+      startButton.style.display = "none";
     
-     endMsg.style.display = "none";
-        startButton.style.display = "none";
-        scoreBoard.style.display = "flex";
-        setBoard.style.display = "flex";
+    if(!gameInfo.state?.matchOver)
+        socket.emit("reset-match");
+    window.location.reload();
 
-         gameInfo.state!.matchOver = false;
-          gameInfo.state!.isPaused = false;
-          socket.emit("game-state", {state: gameInfo.state, status: "stable"});
-          updateScoreBoard(gameInfo);
-          updateSetBoard(gameInfo);
-  });
+    //document.getElementById("menu")!.classList.remove("hidden");
+    
+    //  endMsg.style.display = "none";
+    //     startButton.style.display = "none";
+    //     scoreBoard.style.display = "flex";
+    //     setBoard.style.display = "flex";
+
+        //  gameInfo.state!.matchOver = false;
+        //   gameInfo.state!.isPaused = false;
+        //   socket.emit("game-state", {state: gameInfo.state, status: "stable"});
+         
+          // updateScoreBoard(gameInfo);
+          // updateSetBoard(gameInfo);
+    });
   }
 }
 

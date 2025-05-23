@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { socket, startButton } from "./main";
+import { gameStatus, socket, startButton } from "./main";
 //import { Socket } from "socket.io";
 
 export function createSocket(): Socket
@@ -23,14 +23,20 @@ socket.on("connect", () => {
 }
 
 
-export type gameMode = 'vsAI' | 'localGame' | 'remoteGame' | null;
+export type GameMode = 'vsAI' | 'localGame' | 'remoteGame' | null;
 
 
 // OYUN SEÇENEKLERİNİ PAYLAŞ //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
 
-export function initializeGameSettings(onModeSelected: (mode: gameMode) => void)
-{
-  let game_mode: gameMode = null;
+export function initializeGameSettings(onModeSelected: (status: {currentGameStarted: boolean, game_mode: GameMode}) => void)
+{console.log(`initializeGame settings içindeyiz, gameStatus.currentGameStarted = ${gameStatus.currentGameStarted}`);
+  if(gameStatus.currentGameStarted)
+  {
+    onModeSelected(gameStatus);
+    return;
+  }
+  let status : {currentGameStarted: boolean, game_mode: GameMode, level?: string};
+  status = {currentGameStarted: false, game_mode: null};
 
   const btnVsComp = document.getElementById("btn-vs-computer")!;
   const btnFindRival = document.getElementById("btn-find-rival")!;
@@ -48,32 +54,33 @@ btnVsComp.addEventListener("click", () =>
 diffDiv.querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
     const level = (btn as HTMLElement).dataset.level!;
-    socket.emit("startWithAI", { level });
-    game_mode = 'vsAI'; 
+    //socket.emit("startWithAI", { level });
+    status.game_mode = 'vsAI';
+    status.level = level; 
      diffDiv.classList.add("hidden"); 
     startButton.style.display = "block";
-    onModeSelected(game_mode);
+    onModeSelected(status);
   });
 });
 
 // 3) Find Rival butonuna basıldığında normal matchmaking
 btnFindRival.addEventListener("click", () => {
   document.getElementById("menu")!.classList.add("hidden");
-  socket.emit("findRival");
-  game_mode = 'remoteGame';
+  //socket.emit("findRival");
+  status.game_mode = 'remoteGame';
   startButton.style.display = "block";
   startButton.innerHTML = "I am ready for match !";
-  onModeSelected(game_mode);
+  onModeSelected(status);
 });
 
 // 4) local game e tıklanırsa 
 
 btnLocal.addEventListener("click", () => {
   document.getElementById("menu")!.classList.add("hidden");
-  socket.emit("localGame");
-  game_mode = 'localGame';
+  //socket.emit("localGame");
+  status.game_mode = 'localGame';
   startButton.style.display = "block";
-  onModeSelected(game_mode);
+  onModeSelected(status);
 
 });
 }
@@ -116,8 +123,9 @@ export class GameInfo
   state: GameState | null = null;
   ballState: BallState | null = null;
   paddle: PaddleState | null = null;
-  mode: gameMode;
-  constructor(mode: gameMode)
+  mode: GameMode;
+  nextSetStartedFlag: boolean = false;
+  constructor(mode: GameMode)
   {
     this.mode = mode;
   }
@@ -151,7 +159,8 @@ export class GameInfo
 
 
 
-export function waitForGameInfoReady(gameInfo: GameInfo, socket: Socket): Promise<void> {
+export function waitForGameInfoReady(gameInfo: GameInfo, socket: Socket): Promise<void>
+{
 	return new Promise((resolve) => {
 		const tryResolve = () => {
 			if (gameInfo.isReady()) {

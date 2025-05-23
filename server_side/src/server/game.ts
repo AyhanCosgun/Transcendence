@@ -1,15 +1,13 @@
-// server/game.ts
 import { Server, Socket } from "socket.io";
 import { InputProvider } from "./inputProviders";
-//import { time } from "console";
 
 const UNIT = 40;
-
 
 type Player = 'leftPlayer' | 'rightPlayer';
 
 
-interface GameConstants {
+interface GameConstants
+{
   groundWidth: number;
   groundHeight: number;
   ballRadius: number;
@@ -17,14 +15,16 @@ interface GameConstants {
   paddleHeight: number;
 }
 
-interface GameState {
+interface GameState
+{
   matchOver: boolean;
   setOver: boolean;
   isPaused: boolean;
 }
 
 
-interface BallState {
+interface BallState
+{
   bp: {x: number, y: number};
   bv: {x: number, y: number};
   points: { leftPlayer: number, rightPlayer: number };
@@ -32,7 +32,8 @@ interface BallState {
   usernames: {left: String, right: String}
 }
 
-interface PaddleState {
+interface PaddleState
+{
   p1y: number;
   p2y: number;
 }
@@ -81,14 +82,14 @@ export class Game
   private matchOver = true;
   private setOver = true;
   private isPaused = true;
-  private lastUpdatedTime: number = 0; /* ms */
+  private lastUpdatedTime: number | undefined = undefined; /* ms */
 
   private savedBallVelocity: { x: number; y: number } | null = null;
-  private isInputFrozen = false;
 
   private roomId: string;
   private io: Server;
   private interval!: NodeJS.Timeout | undefined;
+
 
   constructor( private leftInput: InputProvider, private rightInput: InputProvider, io: Server, roomId: string)
   {
@@ -104,6 +105,7 @@ export class Game
         position : { x:0 , y:0},
         velocity : {x:0, y:0},
     };
+
     this.ground =
     {
       width: this.groundWidth,
@@ -165,22 +167,32 @@ export class Game
     this.points.rightPlayer = 0;
   }
 
+  
 
   private startNextSet()
   {
+    this.lastUpdatedTime = undefined;
     this.setOver = true;
+
+    this.exportBallState();
+    this.exportGameState();
   
-      setTimeout(() => {
-        this.resetScores();
-        this.setOver = false;
+    setTimeout(() =>
+    {
+      this.resetScores();
+      this.setOver = false;
 
-      }, 3000);
+   this.exportGameState();
+
+      this.lastUpdatedTime = Date.now();
+
+    }, 3000);
   }
-
 
 
   private resetBall(lastScorer: "leftPlayer" | "rightPlayer")
   {
+    this.lastUpdatedTime = undefined;
     this.ball.firstPedalHit = 0;
     this.ball.speedIncreaseFactor = 1.7;
     this.ball.minimumSpeed = this.ball.firstSpeedFactor;
@@ -188,27 +200,25 @@ export class Game
     this.ball.velocity = {x:0, y:0};
   
     // 🎯 Topu ortada sabitle
-    this.ball.position = {x:0, y: Math.random()*(0.8*this.ground.height)-0.4*this.ground.height};
-    
+    this.ball.position = {x:0, y: Math.random()*(0.8*this.ground.height)-0.4*this.ground.height};     
   
     // 🎯 Belirli bir süre bekle ( 1 saniye)
-    setTimeout(() => {
-  
+     setTimeout(() =>
+    {
       const angle = lastScorer == 'leftPlayer' ? (Math.random()*2-1)*Math.PI/6 : Math.PI - (Math.random()*2-1)*Math.PI/6;
       // 2 saniye sonra yeni rastgele bir hız ver
       this.ball.velocity = {x: Math.cos(angle)*this.ball.firstSpeedFactor, y: Math.sin(angle)*this.ball.firstSpeedFactor};
-  
+      this.lastUpdatedTime = Date.now();
     }, 1000); // 1000ms = 1 saniye
   }
 
 
    private scorePoint(winner: Player)
   {
-    if (this.matchOver) return;
+    if (this.matchOver || this.isPaused) return;
   
     this.points[winner]++;
   
-   // updateScoreBoard();
   
     const p1 = this.points.leftPlayer;
     const p2 = this.points.rightPlayer;
@@ -216,22 +226,24 @@ export class Game
     // Kontrol: Set bitti mi?
     if ((p1 >= 11 || p2 >= 11) && Math.abs(p1 - p2) >= 2)
       {
-        if (p1 > p2) {
-        this.sets.leftPlayer++;
-      } else {
-        this.sets.rightPlayer++;      
-      }
-  
-      //updateSetBoard();
-      const matchControl = (this.sets.leftPlayer === 3 || this.sets.rightPlayer === 3);
-      if (!matchControl)
-          this.startNextSet();
-            
-      this.resetBall(winner);
-  
-      // Kontrol: Maç bitti mi?
-      if (matchControl)
-        this.matchOver = true;
+          if (p1 > p2) {
+          this.sets.leftPlayer++;
+        } else {
+          this.sets.rightPlayer++;      
+        }
+    
+        const matchControl = (this.sets.leftPlayer === 3 || this.sets.rightPlayer === 3);
+        if (!matchControl)
+            this.startNextSet();
+              
+        this.resetBall(winner);
+    
+        // Kontrol: Maç bitti mi?
+        if (matchControl)
+        {
+          this.matchOver = true;
+          this.exportGameState();
+        }
      }
     else   //set bitmedi
     {
@@ -239,7 +251,33 @@ export class Game
     }
   }
 
-  private exportGameConstants()
+ 
+
+public pauseGameLoop()
+{
+  this.lastUpdatedTime = undefined;
+  if (this.interval) {
+    clearInterval(this.interval);
+    this.interval = undefined;
+  }
+  this.isPaused = true;
+
+  this.exportGameState();
+}
+
+public resumeGameLoop() {
+  if (!this.interval) {
+    this.interval = setInterval(() => this.update(), 1000 / 120);
+  }
+  this.isPaused = false;
+
+this.exportGameState();
+
+  this.lastUpdatedTime = Date.now();
+}
+
+
+   private exportGameConstants()
   {
      const gameConstants: GameConstants = 
      {
@@ -253,58 +291,43 @@ export class Game
       this.io.to(this.roomId).emit("gameConstants", gameConstants);
   }
 
-// public pauseGameLoop()
-// {
-//   if (this.interval) {
-//     clearInterval(this.interval);
-//     this.interval = undefined;
-//   }
-//   this.isPaused = true;
+  private exportGameState()
+  {
+       const gameState : GameState = 
+    {
+      matchOver: this.matchOver,
+      setOver: this.setOver,
+      isPaused: this.isPaused,
+     };
 
-//   const gameState : GameState = 
-//     {
-//       matchOver: this.matchOver,
-//       setOver: this.setOver,
-//       isPaused: this.isPaused,
-//      };
-
-//      this.io.to(this.roomId).emit("gameState", gameState);
-// }
-
-// public resumeGameLoop() {
-//   if (!this.interval) {
-//     this.interval = setInterval(() => this.update(), 1000 / 120);
-//   }
-//   this.isPaused = false;
-
-//   this.io.to(this.roomId).emit("gameState", {
-//     matchOver: this.matchOver,
-//     setOver: this.setOver,
-//     isPaused: this.isPaused
-//   });
-// }
-
-
-private freezeGame() {
-  // 1) Topun hızını sakla ve sıfırla
-  this.savedBallVelocity = { ...this.ball.velocity };
-  this.ball.velocity = { x: 0, y: 0 };
-
-  // 2) Paddle girdilerini dondur
-  this.isInputFrozen = true;
-}
-
-private unfreezeGame() {
-  // 1) Topun hızını geri yükle
-  if (this.savedBallVelocity) {
-    this.ball.velocity = this.savedBallVelocity;
-    this.savedBallVelocity = null;
+     this.io.to(this.roomId).emit("gameState", gameState);
   }
 
-  // 2) Paddle girdilerini tekrar aç
-  this.isInputFrozen = false;
-}
 
+   private exportBallState()
+  {
+       const ballState: BallState =
+        {
+          bp: { x: this.ball.position.x / UNIT, y : this.ball.position.y / UNIT},
+          bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
+          points: this.points,
+          sets: this.sets,
+          usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()}
+        };
+
+        this.io.to(this.roomId).emit("ballUpdate", ballState);
+  }
+
+    private exportPaddleState()
+  {
+     const paddleState: PaddleState =
+        {
+          p1y: this.paddle1.position.y/UNIT,
+          p2y: this.paddle2.position.y/UNIT
+        }
+
+        this.io.to(this.roomId).emit("paddleUpdate", paddleState);
+  }
 
 
   public startGameLoop()
@@ -315,14 +338,7 @@ private unfreezeGame() {
     this.setOver = false;
     this.isPaused = false;
 
-    const gameState : GameState = 
-    {
-      matchOver: this.matchOver,
-      setOver: this.setOver,
-      isPaused: this.isPaused,
-     };
-
-     this.io.to(this.roomId).emit("gameState", gameState);
+this.exportGameState();
     
     
      if (typeof this.leftInput.getSocket === 'function')
@@ -336,13 +352,9 @@ private unfreezeGame() {
             this.isPaused = data.state.isPaused;
           }
           else if (data.status === "pause" && !this.isPaused)
-            this.freezeGame();
+            this.pauseGameLoop();
           else if (data.status === "resume" && this.isPaused)
-            this.unfreezeGame();
-            
-            this.isPaused  = data.state.isPaused;
-            this.matchOver = data.state.matchOver;
-            this.setOver   = data.state.setOver;
+            this.resumeGameLoop();
           
         });
       }
@@ -358,9 +370,9 @@ private unfreezeGame() {
             this.isPaused = data.state.isPaused;
           }
           else if (data.status === "pause" && !this.isPaused)
-            this.freezeGame();
+            this.pauseGameLoop();
           else if (data.status === "resume" && this.isPaused)
-            this.unfreezeGame();
+            this.resumeGameLoop();
             
             this.isPaused  = data.state.isPaused;
             this.matchOver = data.state.matchOver;
@@ -375,13 +387,34 @@ private unfreezeGame() {
          Math.random() <= 0.5  ? this.resetBall('leftPlayer') : this.resetBall('rightPlayer');
        }
 
-    this.interval = setInterval(() => {if(!this.isInputFrozen) this.update();}, 1000 / 120); // 120 FPS
+
+       if (typeof this.leftInput.getSocket === 'function')
+      {
+          this.leftInput.getSocket()!.on("reset-match", () => {return;});
+      }
+
+
+       if (typeof this.rightInput.getSocket === 'function')
+      {
+          this.rightInput.getSocket()!.on("reset-match", () => {return;});
+      }
+
+
+
+    this.interval = setInterval(() => this.update(), 1000 / 120); // 120 FPS
+    
   }
 
 
   private update()
-  {  
-    if (this.matchOver || this.setOver || this.isPaused) return;
+  { 
+    if (this.matchOver)
+    {
+        this.pauseGameLoop();
+        return;
+    }
+
+    if (this.setOver || this.isPaused) return;
 
     let timeDifferenceMultiplier = 1;
 
@@ -398,19 +431,18 @@ private unfreezeGame() {
     
     
     // Top hareketi
-    if (!this.isInputFrozen)
-    {this.ball.position.x += this.ball.velocity.x*timeDifferenceMultiplier;
-    this.ball.position.y += this.ball.velocity.y*timeDifferenceMultiplier;}
+    this.ball.position.x += this.ball.velocity.x*timeDifferenceMultiplier;
+    this.ball.position.y += this.ball.velocity.y*timeDifferenceMultiplier;
 
     //pedal hareketi
-    if (!this.isInputFrozen)
-  {  const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
+    //if (!this.isInputFrozen)
+    const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
     const deltaY1 = this.leftInput.getPaddleDelta() * this.paddleSpeed;
     const deltaY2 = this.rightInput.getPaddleDelta() * this.paddleSpeed;
     if (Math.abs(this.paddle1.position.y + deltaY1) <= upperBound)
         this.paddle1.position.y += deltaY1;
     if (Math.abs(this.paddle2.position.y + deltaY2) <= upperBound)
-        this.paddle2.position.y += deltaY2;}
+        this.paddle2.position.y += deltaY2;
 
 
 
@@ -430,7 +462,7 @@ private unfreezeGame() {
     
     
     // Paddle1 (soldaki oyuncu)
-    if (Math.abs(this.ball.position.x - this.paddle1.position.x) < paddleXThreshold && this.ball.velocity.x < 0 &&
+      if (Math.abs(this.ball.position.x - this.paddle1.position.x) < paddleXThreshold && this.ball.velocity.x < 0 &&
       Math.abs(this.ball.position.y - this.paddle1.position.y) < paddleYThreshold && this.ball.position.x > this.paddle1.position.x)
       {
         this.ball.velocity.x *= -1; 
@@ -463,7 +495,6 @@ private unfreezeGame() {
     
     
     // Paddle2 (sağdaki oyuncu)
-   
       if (
       Math.abs(this.ball.position.x - this.paddle2.position.x) < paddleXThreshold && this.ball.velocity.x > 0 &&
       Math.abs(this.ball.position.y - this.paddle2.position.y) < paddleYThreshold && this.ball.position.x < this.paddle2.position.x 
@@ -501,20 +532,20 @@ private unfreezeGame() {
 
 
       // 🎯 Skor kontrolü
-      if (this.ball.position.x > this.ground.width/2 + 5*UNIT)
-        {
+     if (this.ball.position.x > this.ground.width/2 + 5*UNIT)
+        {console.log("skor oldu, left");
           this.scorePoint('leftPlayer');
         }
       else if (this.ball.position.x < -this.ground.width/2 - 5*UNIT)
-        {
+        {console.log("skor oldu, right");
           this.scorePoint('rightPlayer');
         }
       
       
       
       // 🎯 HAVA DİRENCİ UYGULA // her bir frame için hızları biraz azalt
-      this.ball.velocity.x *=this.ball. airResistanceFactor;
-      this.ball.velocity.y *=this.ball. airResistanceFactor;
+      this.ball.velocity.x *=this.ball.airResistanceFactor;
+      this.ball.velocity.y *=this.ball.airResistanceFactor;
       
       // 🎯 Hız minimumdan küçük olmasın, top durmasın
       if (Math.sqrt(Math.pow(this.ball.velocity.x, 2) + Math.pow(this.ball.velocity.y, 2) ) < this.ball.minimumSpeed)
@@ -532,24 +563,8 @@ private unfreezeGame() {
 
 
     // Pozisyonları yayınla
-        const ballState: BallState =
-        {
-          bp: { x: this.ball.position.x / UNIT, y : this.ball.position.y / UNIT},
-          bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
-          points: this.points,
-          sets: this.sets,
-          usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()}
-        };
-
-    this.io.to(this.roomId).emit("ballUpdate", ballState);
-
-    const paddleState: PaddleState =
-    {
-      p1y: this.paddle1.position.y/UNIT,
-      p2y: this.paddle2.position.y/UNIT
-    }
-
-    this.io.to(this.roomId).emit("paddleUpdate", paddleState);
+       this.exportBallState();
+       this.exportPaddleState();    
   }
 
 

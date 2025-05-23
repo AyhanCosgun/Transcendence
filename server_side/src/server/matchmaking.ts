@@ -30,7 +30,7 @@ export function removePlayerFromQueue(player: Player)
   
 
 
-  export function startGameWithAI(human: Player, level: "easy"|"medium"|"hard", io: Server)
+  export function startGameWithAI(human: Player, level: string, io: Server)
   {
 	const roomId = `game_${human.socket.id}_vs_AI_${level}`;
 	human.socket.join(roomId);
@@ -44,8 +44,8 @@ export function removePlayerFromQueue(player: Player)
 
 
 			// Yeni bir oyun başlat
-	human.socket.on("start", () => 
-	{
+	human.socket.on("ready", () => 
+	{console.log("vs AI modunda ready geldi");
 	const game = new Game(leftInput, rightInput, io, roomId);
 	getGame = () => game;
 	getPaddle = () => game.getPaddle2();
@@ -64,7 +64,7 @@ export function removePlayerFromQueue(player: Player)
 	const roomId = `game_${player1.socket.id}_vs_friend`;
 	player1.socket.join(roomId);
 	
-	player1.socket.on("start", () =>
+	player1.socket.on("ready", () =>
 	{
 	const game = new Game(leftInput, rightInput, io, roomId);
 	game.startGameLoop();
@@ -113,13 +113,13 @@ function checkForMatch(io: Server)
 				}
 			}
 
-			player1.socket.on("start", () => {
+			player1.socket.on("ready", () => {
 			socket1Ready = true;
 			console.log("player1 hazır");
 			checkBothReady();
 			});
 
-			player2.socket.on("start", () => {
+			player2.socket.on("ready", () => {
 			socket2Ready = true;
 			console.log("player2 hazır");
 			checkBothReady();

@@ -14,6 +14,8 @@ httpServer.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
 
+type GameMode = 'vsAI' | 'localGame' | 'remoteGame';
+interface GameStatus {currentGameStarted: boolean; game_mode: GameMode, level?: string};
 
 // userId ⇒ Player
 const players = new Map<string, Player>();
@@ -29,29 +31,39 @@ io.on("connection", socket =>
 {
   console.log(`Bağlatı sağlandı: socket.id = ${socket.id}`);
   socket.once("username", ({ username }) =>
-    {
+  {
    
     const player: Player = { socket, username };
     players.set(socket.id, player);
     console.log(`oyuncu players a kaydedildi, player.socket.id = ${player.socket.id}`);
 
-  socket.on("startWithAI", ({ level }) => {
-    // Direkt AI modu başlat
-    startGameWithAI(player, level, io);
-  });
+    socket.on("start", (gameStatus : GameStatus) =>
+      {console.log(`status SERVER A geldi, status = {${gameStatus.currentGameStarted}, ${gameStatus.game_mode}}`);
+        if (gameStatus.game_mode === "vsAI")
+            startGameWithAI(player, gameStatus.level!, io);
+        else if (gameStatus.game_mode === "localGame")
+            startLocalGame(player, io);
+        else if (gameStatus.game_mode === "remoteGame")
+            addPlayerToQueue(player, io);
+      });
 
-  socket.on("findRival", () => {
-    addPlayerToQueue(player, io);
-  });
+      // socket.on("startWithAI", ({ level }) => {
+      //   // Direkt AI modu başlat
+      //   startGameWithAI(player, level, io);
+      // });
 
-  socket.on("localGame", () => {
-    startLocalGame(player, io);
-  });
+      // socket.on("findRival", () => {
+      //   addPlayerToQueue(player, io);
+      // });
 
-  socket.on("disconnect", () => {
+      // socket.on("localGame", () => {
+      //   startLocalGame(player, io);
+      // });
+
+    socket.on("disconnect", () => {
     removePlayerFromQueue(player);
     players.delete(player.socket.id);
-  });
+    });
 
   });
 

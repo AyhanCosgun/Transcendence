@@ -1,7 +1,7 @@
 
 import { GameInfo, prepareScoreBoards} from "./network";
 import { Socket } from "socket.io-client";
-import { initializeEventListeners } from "./eventListeners";
+import { initializeEventListeners, newmatchButton } from "./eventListeners";
 import { startButton } from "./main";
 
 const scoreBoard = document.getElementById("scoreboard")!;
@@ -16,12 +16,12 @@ export const endMsg = document.getElementById("end-message")!;
 type Player = 'player1' | 'player2';
 
 export function updateScoreBoard(gameInfo: GameInfo)
-{
+{if (gameInfo.state?.isPaused) return;
    scoreTable.innerText = `${gameInfo.ballState!.points.leftPlayer}  :  ${gameInfo.ballState!.points.rightPlayer}`;
 }
 
 export function updateSetBoard(gameInfo: GameInfo)
-{
+{if (gameInfo.state?.isPaused) return;
     setTable.innerText = `${gameInfo.ballState!.sets.leftPlayer}  :  ${gameInfo.ballState!.sets.rightPlayer}`;
 }
 
@@ -33,7 +33,6 @@ export function updateSetBoard(gameInfo: GameInfo)
 export function createGame(socket: Socket, gameInfo: GameInfo)
 {
     endMsg.style.display = "none";
-    startButton.style.display = "none";
     scoreBoard.style.display = "flex";
     setBoard.style.display = "flex";
     
@@ -49,37 +48,41 @@ export function createGame(socket: Socket, gameInfo: GameInfo)
 }
 
 
-// export function showSetToast(gameInfo: GameInfo, message: string): Promise<void>
-// {
-//   return new Promise((resolve) => {
-//     const toast = document.getElementById("set-toast")!;
-//     toast.textContent = message;
-//     toast.style.opacity = "1";
-//     gameInfo.state!.setOver = true;
+export function showSetToast(gameInfo: GameInfo, message: string): Promise<void>
+{
+  return new Promise((resolve) => {
+    const toast = document.getElementById("set-toast")!;
+    toast.textContent = message;
+    toast.style.opacity = "1";
+    
 
-//     setTimeout(() => {
-//       toast.style.opacity = "0";
-//       gameInfo.state!.setOver = false;
-//       resolve();
-//     }, 3000);
-//   });
-// }
-
-
-// export async function startNextSet(message: string)
-// {
-//   await showSetToast(message);  // 3 saniye bekler
-// }
+    setTimeout(() => {
+      toast.style.opacity = "0";
+     gameInfo.nextSetStartedFlag = false;
+      resolve();
+    }, 3000);
+  });
+}
 
 
+export async function startNextSet(gameInfo: GameInfo)
+{
+  const winnerName = gameInfo.ballState!.points.leftPlayer > gameInfo.ballState!.points.rightPlayer ? gameInfo.ballState?.usernames.left : gameInfo.ballState?.usernames.right;
+  console.log(`startNextSet fonksiyonuna geldik, winnerName = ${winnerName}`);
+  await showSetToast(gameInfo, `Seti ${winnerName} kazandı !`);  // 3 saniye bekler
+}
 
 
-// export function showEndMessage(message: string) {
-  
-//   endMsg.textContent = message;
-//   endMsg.style.display = "flex";
-//   if (startButton) {
-//     startButton.style.display = "inline-block";
-//     startButton.textContent = "Yeni Maça Başla";
-//   }
-// }
+
+
+export function showEndMessage(gameInfo: GameInfo) {
+  const winnerName = gameInfo.ballState!.points.leftPlayer > gameInfo.ballState!.points.rightPlayer ? gameInfo.ballState?.usernames.left : gameInfo.ballState?.usernames.right;
+  console.log(`showEndMsg fonksiyonuna geldik, gameInfo.state?.matchOver = ${gameInfo.state?.matchOver}`);
+  endMsg.textContent = `${winnerName} maçı kazandı !`;
+  endMsg.style.display = "flex";
+  if (startButton) {
+    startButton.textContent = "Tekrar Oyna";
+    startButton.style.display = "inline-block";
+  }
+  newmatchButton.style.display = "block";
+}

@@ -1,13 +1,29 @@
 import { Engine, Scene, Vector3 } from "@babylonjs/core";
-import {updateScoreBoard, updateSetBoard } from "./ui";
+import {startNextSet, updateScoreBoard, updateSetBoard, showEndMessage } from "./ui";
 import { ball, paddle1, paddle2 } from "./main";
 import { GameInfo } from "./network";
 
 export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo): void
 {
     engine.runRenderLoop(() => {
-        if (gameInfo.state?.matchOver) return;
-        if (gameInfo.state?.setOver) return;
+        if (gameInfo.state?.matchOver)
+          {
+            updateScoreBoard(gameInfo);
+            updateSetBoard(gameInfo);
+            showEndMessage(gameInfo);
+            engine.stopRenderLoop();
+            return;
+          }
+        if (gameInfo.state?.setOver)
+          {
+            if (!gameInfo.nextSetStartedFlag)
+            {
+              updateScoreBoard(gameInfo);
+              startNextSet(gameInfo);
+              gameInfo.nextSetStartedFlag = true;
+            }
+            return;
+          }
         if (gameInfo.state?.isPaused) return;
      
         // Topu hareket ettir
@@ -24,6 +40,11 @@ export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo):
    
         scene.render();
       });
+      if (gameInfo.state?.matchOver)
+        {
+          console.log(`startGameloop bitti`);
+          return;
+        }
 }
   
 
