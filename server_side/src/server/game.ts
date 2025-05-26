@@ -1,9 +1,9 @@
-import { Server, Socket } from "socket.io";
+import { Server} from "socket.io";
 import { InputProvider } from "./inputProviders";
 
 const UNIT = 40;
 
-type Player = 'leftPlayer' | 'rightPlayer';
+type Side = 'leftPlayer' | 'rightPlayer';
 
 
 interface GameConstants
@@ -213,7 +213,7 @@ export class Game
   }
 
 
-   private scorePoint(winner: Player)
+   private scorePoint(winner: Side)
   {
     if (this.matchOver || this.isPaused) return;
   
@@ -241,8 +241,10 @@ export class Game
         // Kontrol: Maç bitti mi?
         if (matchControl)
         {
-          this.matchOver = true;
+          this.exportBallState();
           this.exportGameState();
+          this.matchOver = true;
+          
         }
      }
     else   //set bitmedi

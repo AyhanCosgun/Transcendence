@@ -5,7 +5,8 @@ import { GameInfo } from "./network";
 
 export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo): void
 {
-    engine.runRenderLoop(() => {
+    engine.runRenderLoop(() =>
+      {
         if (gameInfo.state?.matchOver)
           {
             updateScoreBoard(gameInfo);
@@ -27,24 +28,19 @@ export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo):
         if (gameInfo.state?.isPaused) return;
      
         // Topu hareket ettir
-      ball.ball.position = new Vector3(gameInfo.ballState?.bp!.x, gameInfo.ballState?.bp!.y, 0);
-      ball.velocity = new Vector3(gameInfo.ballState?.bv.x, gameInfo.ballState?.bv.y, 0);
-      ball.ball.position.addInPlace(ball.velocity);
-      // pedalları hareket ettir
-      paddle1.position.y = gameInfo.paddle?.p1y!;
-      paddle2.position.y = gameInfo.paddle?.p2y!;
+        ball.ball.position = new Vector3(gameInfo.ballState?.bp!.x, gameInfo.ballState?.bp!.y, 0);
+        ball.velocity = new Vector3(gameInfo.ballState?.bv.x, gameInfo.ballState?.bv.y, 0);
+        ball.ball.position.addInPlace(ball.velocity);
+        // pedalları hareket ettir
+        paddle1.position.y = gameInfo.paddle?.p1y!;
+        paddle2.position.y = gameInfo.paddle?.p2y!;
 
-      //skor ve set güncellemesi
-      updateScoreBoard(gameInfo);
-      updateSetBoard(gameInfo);
+        //skor ve set güncellemesi
+        updateScoreBoard(gameInfo);
+        updateSetBoard(gameInfo);
    
         scene.render();
       });
-      if (gameInfo.state?.matchOver)
-        {
-          console.log(`startGameloop bitti`);
-          return;
-        }
 }
   
 

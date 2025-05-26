@@ -1,4 +1,4 @@
-import { Ball, Paddle } from "./game";
+import { Ball} from "./game";
 
 const UNIT = 40;
 

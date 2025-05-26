@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { gameStatus, socket, startButton } from "./main";
+import { gameStatus, startButton } from "./main";
 //import { Socket } from "socket.io";
 
 export function createSocket(): Socket
@@ -24,6 +24,8 @@ socket.on("connect", () => {
 
 
 export type GameMode = 'vsAI' | 'localGame' | 'remoteGame' | null;
+
+export const info = document.getElementById("info")!;
 
 
 // OYUN SEÇENEKLERİNİ PAYLAŞ //gameConstants, gameState, ballUpdate, paddleUpdate *****************************************************
@@ -65,11 +67,10 @@ diffDiv.querySelectorAll("button").forEach(btn => {
 
 // 3) Find Rival butonuna basıldığında normal matchmaking
 btnFindRival.addEventListener("click", () => {
-  document.getElementById("menu")!.classList.add("hidden");
-  //socket.emit("findRival");
+  document.getElementById("menu")!.classList.add("hidden"); 
+  info.textContent = "Online bir rakip için bekleniyor  ...";
+  info.style.opacity = "1";
   status.game_mode = 'remoteGame';
-  startButton.style.display = "block";
-  startButton.innerHTML = "I am ready for match !";
   onModeSelected(status);
 });
 
@@ -157,6 +158,59 @@ export class GameInfo
   }
 }
 
+
+interface Player
+{
+  socket: Socket;
+  username: string;
+}
+
+let rival:string;
+
+export function waitForMatchReady(socket: Socket): Promise<void>
+{
+   return new Promise((resolve) =>
+    {
+    	socket.on("match-ready", (matchPlayers : {left: string, right: string}) =>
+        {console.log("match-ready emiti geldi");
+          //const rival = matchPlayers.left.socket.id === socket.id ? matchPlayers.right.username : matchPlayers.left.username;
+          rival = matchPlayers.right;
+          info.textContent = `${rival} ile eşleştin`;
+          startButton.innerHTML = `${rival} ile oyna !`;
+           startButton.style.display = "block";
+           resolve();
+        });
+    });
+}
+
+
+export function waitForRematchApproval(socket: Socket): Promise<boolean>
+{
+  return new Promise((resolve) =>
+    {
+      info.textContent = `Talebiniz ${rival} oyuncusuna iletildi.`;
+      info.style.opacity = "1";
+      socket.on("rematch-ready", () =>
+        {console.log("rematch-ready emiti geldi");
+          info.textContent = `Maç başlıyor`;
+          setTimeout(() =>
+            {
+              info.style.opacity = "0";
+              resolve(true);
+            }, 1000);
+        });
+
+      setTimeout(() =>
+      {
+        info.textContent = `${rival} oyuncusundan onay gelmedi !`;
+        setTimeout(() =>
+        {
+          info.style.opacity = "0";
+        }, 2000);
+        resolve(false);
+      }, 20000);   
+  });
+}
 
 
 export function waitForGameInfoReady(gameInfo: GameInfo, socket: Socket): Promise<void>

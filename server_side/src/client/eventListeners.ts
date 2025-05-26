@@ -117,10 +117,12 @@ export function initializeEventListeners(gameInfo: GameInfo)
     newmatchButton.style.display = "none";
   });
 
+}
+
 
 
   newmatchButton?.addEventListener("click", () =>
-    {
+    {console.log(`yeni maça başlaya tıklandı, içerik : ${newmatchButton.innerText}`);
     resumeButton.style.display = "none";
     newmatchButton.style.display = "none";
     if (startButton)
@@ -144,7 +146,6 @@ export function initializeEventListeners(gameInfo: GameInfo)
           // updateScoreBoard(gameInfo);
           // updateSetBoard(gameInfo);
     });
-  }
 }
 
 

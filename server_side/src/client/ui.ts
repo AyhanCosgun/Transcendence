@@ -12,9 +12,6 @@ export const endMsg = document.getElementById("end-message")!;
 
 
 
-// MAÇ VE SET AYARLAMA
-type Player = 'player1' | 'player2';
-
 export function updateScoreBoard(gameInfo: GameInfo)
 {if (gameInfo.state?.isPaused) return;
    scoreTable.innerText = `${gameInfo.ballState!.points.leftPlayer}  :  ${gameInfo.ballState!.points.rightPlayer}`;
@@ -81,7 +78,7 @@ export function showEndMessage(gameInfo: GameInfo) {
   endMsg.textContent = `${winnerName} maçı kazandı !`;
   endMsg.style.display = "flex";
   if (startButton) {
-    startButton.textContent = "Tekrar Oyna";
+    startButton.textContent = "Aynı Maçı Tekrar Oyna";
     startButton.style.display = "inline-block";
   }
   newmatchButton.style.display = "block";

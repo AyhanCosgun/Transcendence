@@ -2,10 +2,9 @@ import { createCamera, createPaddles, createGround, createWalls, createScene} fr
 import {Mesh, Engine, Scene} from "@babylonjs/core";
 import { startGameLoop} from "./gameLoop"
 import { BallController } from "./ball";
-import { initializeGameSettings, GameInfo, waitForGameInfoReady, GameMode } from "./network";
-import { createGame } from "./ui";
+import { initializeGameSettings, GameInfo, waitForGameInfoReady, waitForMatchReady, waitForRematchApproval, GameMode, info } from "./network";
+import { createGame, endMsg } from "./ui";
 import { newmatchButton } from "./eventListeners";
-
 
 // 🎮 WebSocket bağlantısı
 import {createSocket } from "./network";
@@ -13,6 +12,7 @@ import {createSocket } from "./network";
 export const socket = createSocket();
 
 export const startButton = document.getElementById("start-button")!;
+
 
 //game materials...
 let engine: Engine | undefined = undefined;
@@ -27,38 +27,61 @@ let ballRef: BallController;
 
 export let gameStatus : {currentGameStarted: boolean, game_mode: GameMode, level?: string};
 gameStatus = { currentGameStarted: false,  game_mode: null};
+let reMatch = false;
 
 
-initializeGameSettings((status) => {
+initializeGameSettings(async (status) =>
+{
     console.log(`status geldi, status = {${status.currentGameStarted}, ${status.game_mode}}`);
     gameStatus = status;
-    console.log(`gameStatus devraldı, gameStatus = {${gameStatus.currentGameStarted}, ${gameStatus.game_mode}}`);
     socket.emit("start", gameStatus);
+
+    if (gameStatus.game_mode === "remoteGame")
+    {
+      await waitForMatchReady(socket);
+      console.log(`${socket.id} için maç HAZIR`);
+    }
+
+
 	// Oyun başlatma butonuna tıklanınca:
-	startButton.addEventListener("click", async () => {
-        startButton.style.display = "none";
-        newmatchButton.style.display = "none";
-        console.log(`START A TIKLANDI, içeriği : ${startButton.innerText}`);
-        if (gameStatus.currentGameStarted)
-            cleanOldGame();
-        socket.emit("ready");
-        gameInfo = new GameInfo(gameStatus.game_mode);
-        await waitForGameInfoReady(gameInfo, socket);
-        console.log(`${socket.id} için VERİLER HAZIR`);
-		createGame(socket, gameInfo);
-		startGame(gameInfo); // oyun kurulumuna geç
-	});
+	startButton.addEventListener("click", async () =>
+    {
+      console.log(`START A TIKLANDI, içeriği : ${startButton.innerText}`);
+      startButton.style.display = "none";
+      endMsg.style.display = "none";
+      
+      info.style.opacity = "0";
+      newmatchButton.style.display = "none";
+      
+      if (gameStatus.currentGameStarted)
+      {
+        reMatch = true;
+        cleanOldGame();
+      }
+      socket.emit("ready", false);
+      if (gameStatus.game_mode === "remoteGame" && reMatch)
+        {
+          const approval = await waitForRematchApproval(socket);
+          if (approval)
+            socket.emit("ready", true);
+          else
+          {
+            newmatchButton.style.display = "block";
+            return;
+          }
+        }
+      gameInfo = new GameInfo(gameStatus.game_mode);
+      await waitForGameInfoReady(gameInfo, socket);
+      console.log(`${socket.id} için VERİLER HAZIR`);
+		  createGame(socket, gameInfo);
+		  startGame(gameInfo); // oyun kurulumuna geç
+	  });
 });
 
 function cleanOldGame()
 {
   scene!.dispose();
   engine!.dispose();
-
-//   document.getElementById("scoreboard")!.innerHTML = "";
-//   document.getElementById("setboard")!.innerHTML = "";
-//   document.getElementById("set-toast")!.style.opacity = "0";
-//   document.getElementById("end-message")!.style.display = "none";
 
   scene = undefined;
   engine = undefined;
@@ -68,6 +91,7 @@ function cleanOldGame()
   socket.off("ballUpdate");
   socket.off("paddleUpdate");
   socket.off("ready");
+  socket.off("rematch-ready");
   socket.off("start");
   socket.off("username");
   socket.off("player-move");

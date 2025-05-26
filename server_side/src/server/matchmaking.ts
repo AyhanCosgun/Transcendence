@@ -6,7 +6,7 @@ import { LocalPlayerInput, RemotePlayerInput, AIPlayerInput } from "./inputProvi
 export interface Player
 {
 	socket: Socket;
-	username: String;
+	username: string;
 }
 
 const waitingPlayers = new Map<string, Player>();
@@ -82,7 +82,7 @@ function mapShift<K, V>(map: Map<K, V>): V | undefined {
 function checkForMatch(io: Server)
 {
 	while (waitingPlayers.size >= 2)
-	{
+	{console.log(`checkforMatch içine girdi.`);
 		const player1 = mapShift(waitingPlayers);
 		const player2 = mapShift(waitingPlayers);
 
@@ -91,6 +91,10 @@ function checkForMatch(io: Server)
 			const roomId = `game_${player1.socket.id}_${player2.socket.id}`;
 			player1.socket.join(roomId);
 			player2.socket.join(roomId);
+
+			const matchPlayers = {left: player1.username, right: player2.username};
+
+			io.to(roomId).emit("match-ready", matchPlayers);
 
 			const leftInput = new RemotePlayerInput(player1);
 			const rightInput = new RemotePlayerInput(player2);
@@ -102,26 +106,40 @@ function checkForMatch(io: Server)
 
 			let socket1Ready = false;
 			let socket2Ready = false;
+			let reMatchApproval1 = false;
+			let reMatchApproval2 = false;
+			let reMatch = false;
 
 			function checkBothReady()
 			{
 			if (socket1Ready && socket2Ready)
 				{
-				console.log("Her iki socket de hazır!");
-				const game = new Game(leftInput, rightInput, io, roomId);
-				game.startGameLoop();
+					console.log("Her iki socket de hazır!");
+					if (reMatch)
+						io.to(roomId).emit("rematch-ready");
+					if (reMatchApproval1 === reMatchApproval2 && reMatch !== reMatchApproval1) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+						return;
+					const game = new Game(leftInput, rightInput, io, roomId);
+					game.startGameLoop();
+					reMatch = true;
+					reMatchApproval1 = false;
+					reMatchApproval2 = false;
+					socket1Ready = false;
+					socket2Ready = false;
 				}
 			}
 
-			player1.socket.on("ready", () => {
+			player1.socket.on("ready", (data : boolean) => {
+			reMatchApproval1 = data;
 			socket1Ready = true;
-			console.log("player1 hazır");
+			console.log(`player1 hazır, reMatchApproval = ${reMatchApproval1}`);
 			checkBothReady();
 			});
 
-			player2.socket.on("ready", () => {
+			player2.socket.on("ready", (data : boolean) => {
+			reMatchApproval2 = data;
 			socket2Ready = true;
-			console.log("player2 hazır");
+			console.log(`player2 hazır, reMatchApproval = ${reMatchApproval2}`);
 			checkBothReady();
 			});
 
