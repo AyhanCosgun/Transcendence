@@ -1,5 +1,5 @@
 
-import { GameInfo, prepareScoreBoards} from "./network";
+import { GameInfo, prepareScoreBoards, info} from "./network";
 import { Socket } from "socket.io-client";
 import { initializeEventListeners, newmatchButton } from "./eventListeners";
 import { startButton } from "./main";
@@ -30,6 +30,7 @@ export function updateSetBoard(gameInfo: GameInfo)
 export function createGame(socket: Socket, gameInfo: GameInfo)
 {
     endMsg.style.display = "none";
+    info.style.opacity = "0";
     scoreBoard.style.display = "flex";
     setBoard.style.display = "flex";
     
@@ -37,9 +38,8 @@ export function createGame(socket: Socket, gameInfo: GameInfo)
   //prepareGameInfo(gameInfo, socket);
   prepareScoreBoards(gameInfo);
   initializeEventListeners(gameInfo);
-  gameInfo.state!.matchOver = false;
-  gameInfo.state!.isPaused = false;
-  socket.emit("game-state", {state: gameInfo.state, status: "stable"}); // ????????? şu anda bunu alan yok !!
+  //gameInfo.state!.matchOver = false;
+  //gameInfo.state!.isPaused = false;
   updateScoreBoard(gameInfo);
   updateSetBoard(gameInfo);
 }

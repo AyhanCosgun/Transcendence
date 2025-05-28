@@ -1,7 +1,7 @@
 import { Server} from "socket.io";
 import { InputProvider } from "./inputProviders";
 
-const UNIT = 40;
+const UNIT = 40; let counter = 0;
 
 type Side = 'leftPlayer' | 'rightPlayer';
 
@@ -240,10 +240,11 @@ export class Game
     
         // Kontrol: Maç bitti mi?
         if (matchControl)
-        {
+        {console.log(`SKORPOINT İÇİNDE MAÇ yeni BİTTİ, ŞU AN : ${this.matchOver}`);
+          this.matchOver = true; ///////////////////////////////////////////////////////////////////////////////// ??????????????????????????????????????????????????????????
           this.exportBallState();
           this.exportGameState();
-          this.matchOver = true;
+          console.log(`SKORPOINT İÇİNDE maç bitti cliente export ettik , ŞU AN : ${this.matchOver}`);
           
         }
      }
@@ -256,24 +257,33 @@ export class Game
  
 
 public pauseGameLoop()
-{
+{console.log(`pauseGameLoop a girdi, this.matchOver = ${this.matchOver}`);
+  if (!this.matchOver)
+    this.isPaused = true;
   this.lastUpdatedTime = undefined;
-  if (this.interval) {
+  if (this.interval) {console.log(`interval varmış girdik, this.matchOver = ${this.matchOver}`);
     clearInterval(this.interval);
     this.interval = undefined;
+    console.log(`İnterval silindi... şu anda this.matchOver = ${this.matchOver}`);
+    // if (this.matchOver)
+    // {
+    //   if (typeof this.leftInput.getSocket === 'function')
+    //       this.leftInput.getSocket().off;
+    //   if (typeof this.rightInput.getSocket === 'function')
+    //       this.rightInput.getSocket().off;
+    // }
   }
-  this.isPaused = true;
-
-  this.exportGameState();
+  console.log(`Pauseloop ta gönderilecek olan GameState --->  matchOver: ${this.matchOver}, setOver: ${this.setOver}, isPaused: ${this.isPaused},`)
+  //this.exportGameState();
 }
 
 public resumeGameLoop() {
+  this.isPaused = false;
   if (!this.interval) {
     this.interval = setInterval(() => this.update(), 1000 / 120);
   }
-  this.isPaused = false;
-
-this.exportGameState();
+  
+//this.exportGameState();
 
   this.lastUpdatedTime = Date.now();
 }
@@ -291,6 +301,12 @@ this.exportGameState();
       };
 
       this.io.to(this.roomId).emit("gameConstants", gameConstants);
+      // console.log(`room a gönderilen gameConstants 
+      // groundWidth: ${this.ground.width/UNIT},
+      //  groundHeight: ${this.ground.height/UNIT},
+      //  ballRadius: ${this.ball.radius/UNIT},
+      //  paddleWidth: ${this.paddle1.width/UNIT},
+      //  paddleHeight: ${this.paddle1.height/UNIT}`);
   }
 
   private exportGameState()
@@ -303,6 +319,10 @@ this.exportGameState();
      };
 
      this.io.to(this.roomId).emit("gameState", gameState);
+     console.log(`room a gönderilen gameState
+      matchOver: ${this.matchOver},
+      setOver: ${this.setOver},
+      isPaused: ${this.isPaused}`);
   }
 
 
@@ -318,6 +338,12 @@ this.exportGameState();
         };
 
         this.io.to(this.roomId).emit("ballUpdate", ballState);
+        // console.log(`room a gönderilen ballUpdate
+        //  bp: { x: ${this.ball.position.x / UNIT}, y : ${this.ball.position.y / UNIT}},
+        //  bv: {x: ${this.ball.velocity.x / UNIT}, y : ${this.ball.velocity.y /UNIT}},
+        //  points: ${this.points},
+        //  sets: ${this.sets},
+        //  usernames: {left: ${this.leftInput.getUsername()}, right: ${this.rightInput.getUsername()}}`);
   }
 
     private exportPaddleState()
@@ -329,11 +355,14 @@ this.exportGameState();
         }
 
         this.io.to(this.roomId).emit("paddleUpdate", paddleState);
+        // console.log(`room a gönderilen paddleUpdate
+        //  p1y: ${this.paddle1.position.y/UNIT},
+        //   p2y: ${this.paddle2.position.y/UNIT}`);
   }
 
 
   public startGameLoop()
-  {
+  {console.log(`startGameLoop a girildi: maç adı : ${this.roomId}__${++counter}`);
     this.exportGameConstants();
 
     this.matchOver = false;
@@ -345,42 +374,24 @@ this.exportGameState();
     
      if (typeof this.leftInput.getSocket === 'function')
       {
-        this.leftInput.getSocket()!.on("game-state", (data: {state: GameState, status: String}) =>
-        {
-          if (data.status === "stable")
-          {
-            this.matchOver = data.state.matchOver;
-            this.setOver = data.state.setOver;
-            this.isPaused = data.state.isPaused;
-          }
-          else if (data.status === "pause" && !this.isPaused)
+        this.leftInput.getSocket()!.on("pause-resume", (data: {status: string}) =>
+        {console.log(`pause-resume emiti server a geldi: status = ${data.status}`);
+        if (data.status === "pause" && !this.isPaused)
             this.pauseGameLoop();
-          else if (data.status === "resume" && this.isPaused)
+        else if (data.status === "resume" && this.isPaused)
             this.resumeGameLoop();
-          
         });
       }
 
       if (typeof this.rightInput.getSocket === 'function')
       {
-             this.rightInput.getSocket()!.on("game-state", (data: {state: GameState, status: String}) =>
-        {
-          if (data.status === "stable")
-          {
-            this.matchOver = data.state.matchOver;
-            this.setOver = data.state.setOver;
-            this.isPaused = data.state.isPaused;
-          }
-          else if (data.status === "pause" && !this.isPaused)
+        this.rightInput.getSocket()!.on("pause-resume", (data: {status: string}) =>
+        {console.log(`pause-resume emiti server a geldi: status = ${data.status}`);
+        if (data.status === "pause" && !this.isPaused)
             this.pauseGameLoop();
-          else if (data.status === "resume" && this.isPaused)
+        else if (data.status === "resume" && this.isPaused)
             this.resumeGameLoop();
-            
-            this.isPaused  = data.state.isPaused;
-            this.matchOver = data.state.matchOver;
-            this.setOver   = data.state.setOver;
-          
-        });;
+        });
       }
 
 

@@ -165,31 +165,32 @@ interface Player
   username: string;
 }
 
-let rival:string;
 
-export function waitForMatchReady(socket: Socket): Promise<void>
+export function waitForMatchReady(socket: Socket): Promise<string>
 {
    return new Promise((resolve) =>
     {
     	socket.on("match-ready", (matchPlayers : {left: string, right: string}) =>
         {console.log("match-ready emiti geldi");
           //const rival = matchPlayers.left.socket.id === socket.id ? matchPlayers.right.username : matchPlayers.left.username;
-          rival = matchPlayers.right;
+          let rival = matchPlayers.right;
           info.textContent = `${rival} ile eşleştin`;
           startButton.innerHTML = `${rival} ile oyna !`;
            startButton.style.display = "block";
-           resolve();
+           resolve(rival);
         });
     });
 }
 
 
-export function waitForRematchApproval(socket: Socket): Promise<boolean>
+export function waitForRematchApproval(socket: Socket, rival: string): Promise<boolean>
 {
   return new Promise((resolve) =>
     {
       info.textContent = `Talebiniz ${rival} oyuncusuna iletildi.`;
       info.style.opacity = "1";
+      setTimeout(() => { info.textContent = `${rival} oyuncusunun onayı bekleniyor ...`; }, 1000);
+      
       socket.on("rematch-ready", () =>
         {console.log("rematch-ready emiti geldi");
           info.textContent = `Maç başlıyor`;
@@ -223,11 +224,23 @@ export function waitForGameInfoReady(gameInfo: GameInfo, socket: Socket): Promis
 		};
 
 		socket.on("gameConstants", (constants: GameConstants) => {
+      console.log(`cliente  gameConstants geldi :
+      groundWidth: ${constants.groundWidth},
+       groundHeight: ${constants.groundHeight},
+       ballRadius: ${constants.ballRadius},
+       paddleWidth: ${constants.paddleWidth},
+       paddleHeight: ${constants.paddleHeight}`);
 			gameInfo.setConstants(constants);
 			tryResolve();
 		});
 
 		socket.on("gameState", (state: GameState) => {
+      console.log(`client e gameState geldi:
+      matchOver: ${state.matchOver},
+      setOver: ${state.setOver},
+      isPaused: ${state.isPaused}`);
+      if (state.matchOver)
+        console.log(`matchOver TRUE geldi..........`);
 			gameInfo.setState(state);
 			tryResolve();
 		});

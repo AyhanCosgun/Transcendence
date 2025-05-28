@@ -1,6 +1,6 @@
 #scoreboard {
   position: absolute;
-  top: 3%;
+  top: 4%;
   left: 50%;
   transform: translateX(-50%);
   
@@ -8,7 +8,7 @@
   justify-content: center;
   align-items: center;
   
-  padding: 1vw 2vw;
+  padding: 0.5vw 2vw;
   background: linear-gradient(145deg, #1e1e1e, #2c2c2c);
   border: 2px solid #555;
   border-radius: 12px;

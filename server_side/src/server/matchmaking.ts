@@ -3,6 +3,8 @@ import { Game, Paddle } from "./game"; // Oyunun mantığını yöneten sınıf
 import { Server } from "socket.io";
 import { LocalPlayerInput, RemotePlayerInput, AIPlayerInput } from "./inputProviders";
 
+let counter = 0;
+
 export interface Player
 {
 	socket: Socket;
@@ -67,6 +69,7 @@ export function removePlayerFromQueue(player: Player)
 	player1.socket.on("ready", () =>
 	{
 	const game = new Game(leftInput, rightInput, io, roomId);
+	console.log(`serverda yeni oyun oluştu, roomId = ${roomId}___${++counter}`);
 	game.startGameLoop();
 	});
   }
@@ -99,8 +102,6 @@ function checkForMatch(io: Server)
 			const leftInput = new RemotePlayerInput(player1);
 			const rightInput = new RemotePlayerInput(player2);
 
-			console.log(`checkforMatch içindeyiz, roomid  =  ${roomId}`);
-			console.log(`iki oyuncunun socketleri aynı mı ? : ${player1.socket === player2.socket}`);
 			// Yeni bir oyun başlat
 
 
@@ -117,7 +118,7 @@ function checkForMatch(io: Server)
 					console.log("Her iki socket de hazır!");
 					if (reMatch)
 						io.to(roomId).emit("rematch-ready");
-					if (reMatchApproval1 === reMatchApproval2 && reMatch !== reMatchApproval1) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+					if ((reMatchApproval1 === reMatchApproval2 && reMatch !== reMatchApproval1) || (reMatchApproval1 !== reMatchApproval2))  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 						return;
 					const game = new Game(leftInput, rightInput, io, roomId);
 					game.startGameLoop();

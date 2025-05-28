@@ -36,10 +36,11 @@ initializeGameSettings(async (status) =>
     gameStatus = status;
     socket.emit("start", gameStatus);
 
+    let rival : string;
     if (gameStatus.game_mode === "remoteGame")
     {
-      await waitForMatchReady(socket);
-      console.log(`${socket.id} için maç HAZIR`);
+      rival = await waitForMatchReady(socket);
+      console.log(`${socket.id} ${rival} maçı için HAZIR`);
     }
 
 
@@ -49,8 +50,11 @@ initializeGameSettings(async (status) =>
       console.log(`START A TIKLANDI, içeriği : ${startButton.innerText}`);
       startButton.style.display = "none";
       endMsg.style.display = "none";
-      
-      info.style.opacity = "0";
+
+      if (gameStatus.game_mode === "remoteGame")
+        info.textContent = `${rival} bekleniyor ...`;
+      else
+        info.style.opacity = "0";
       newmatchButton.style.display = "none";
       
       if (gameStatus.currentGameStarted)
@@ -61,7 +65,7 @@ initializeGameSettings(async (status) =>
       socket.emit("ready", false);
       if (gameStatus.game_mode === "remoteGame" && reMatch)
         {
-          const approval = await waitForRematchApproval(socket);
+          const approval = await waitForRematchApproval(socket, rival);
           if (approval)
             socket.emit("ready", true);
           else
@@ -96,9 +100,9 @@ function cleanOldGame()
   socket.off("username");
   socket.off("player-move");
   socket.off("local-input");
-  socket.off("game-state");
+  socket.off("pause-resume");
   socket.off("reset-match");
- 
+
   gameInfo = null;
 
  

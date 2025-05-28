@@ -11,23 +11,24 @@ export function initializeEventListeners(gameInfo: GameInfo)
 {
   if(gameInfo.mode === 'remoteGame' || gameInfo.mode === 'vsAI')
     {
-      window.addEventListener("keydown", (event) => {
-      let moved = false;
-
-      if (event.key === 'w')
+      window.addEventListener("keydown", (event) =>
         {
-           socket.emit("player-move", { direction: "up" });
-           moved = true;
-        }
-        else if (event.key === 's')
-          {
-            socket.emit("player-move", { direction: "down" });
-            moved = true;
-          }
+          let moved = false;
 
-       if (moved)
-          event.preventDefault();
-    });
+          if (event.key === 'w')
+            {
+              socket.emit("player-move", { direction: "up" });
+              moved = true;
+            }
+            else if (event.key === 's')
+              {
+                socket.emit("player-move", { direction: "down" });
+                moved = true;
+              }
+
+          if (moved)
+              event.preventDefault();
+        });
 
       window.addEventListener("keyup", (e) =>
         {
@@ -68,7 +69,7 @@ export function initializeEventListeners(gameInfo: GameInfo)
 
        if (moved)
           event.preventDefault();
-    });
+      });
 
       window.addEventListener("keyup", (e) =>
         {
@@ -88,36 +89,37 @@ export function initializeEventListeners(gameInfo: GameInfo)
  
   if(gameInfo.mode !== 'remoteGame')
   {
-    document.addEventListener("keydown", (event) => {
+    document.addEventListener("keydown", (event) =>
+    {
     if (event.code === "Space" && startButton.style.display == "none")
       {
       gameInfo.state!.isPaused = !(gameInfo.state!.isPaused);
       
       if (gameInfo.state!.isPaused) {
-        socket.emit("game-state", {state: gameInfo.state, status: "pause"});
+        
+        socket.emit("pause-resume", {status: "pause"});
         // Duraklatıldığında "devam et" butonunu göster
         resumeButton.style.display = "block";
         newmatchButton.style.display = "block";
       } else {
-        socket.emit("game-state", {state: gameInfo.state, status: "resume"});
+        socket.emit("pause-resume", {status: "resume"});
         // Devam edildiğinde butonu gizle
         resumeButton.style.display = "none";
         newmatchButton.style.display = "none";
       }
 
-    }
-  });
+      }
+    });
 
 
-  resumeButton?.addEventListener("click", () =>
-  {
-    gameInfo.state!.isPaused = false;
-    socket.emit("game-state", {state: gameInfo.state, status: "resume"});
-    resumeButton.style.display = "none";
-    newmatchButton.style.display = "none";
-  });
-
-}
+    resumeButton?.addEventListener("click", () =>
+    {
+      gameInfo.state!.isPaused = false;
+      socket.emit("pause-resume", {status: "resume"});
+      resumeButton.style.display = "none";
+      newmatchButton.style.display = "none";
+    });
+  }
 
 
 
@@ -141,7 +143,7 @@ export function initializeEventListeners(gameInfo: GameInfo)
 
         //  gameInfo.state!.matchOver = false;
         //   gameInfo.state!.isPaused = false;
-        //   socket.emit("game-state", {state: gameInfo.state, status: "stable"});
+        //   socket.emit("pause-resume", {state: gameInfo.state, status: "stable"});
          
           // updateScoreBoard(gameInfo);
           // updateSetBoard(gameInfo);
