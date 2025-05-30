@@ -111,6 +111,7 @@ interface BallState {
   points: { leftPlayer: number, rightPlayer: number };
   sets: { leftPlayer: number, rightPlayer: number };
   usernames: {left: String, right: String}
+  py: number;
 }
 
 interface PaddleState {

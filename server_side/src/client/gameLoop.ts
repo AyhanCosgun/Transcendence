@@ -1,9 +1,9 @@
-import { Engine, Scene, Vector3 } from "@babylonjs/core";
+import { Engine, Scene, Vector3, Mesh } from "@babylonjs/core";
 import {startNextSet, updateScoreBoard, updateSetBoard, showEndMessage } from "./ui";
-import { ball, paddle1, paddle2 } from "./main";
+import { ball, paddle1, paddle2} from "./main";
 import { GameInfo } from "./network";
 
-export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo): void
+export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo, predictedBall: Mesh ): void
 {
     engine.runRenderLoop(() =>
       {
@@ -35,9 +35,13 @@ export function startGameLoop(engine: Engine, scene: Scene, gameInfo: GameInfo):
         paddle1.position.y = gameInfo.paddle?.p1y!;
         paddle2.position.y = gameInfo.paddle?.p2y!;
 
+
+        predictedBall.position.y = gameInfo.ballState?.py!;
+
         //skor ve set güncellemesi
         updateScoreBoard(gameInfo);
         updateSetBoard(gameInfo);
+
    
         scene.render();
       });

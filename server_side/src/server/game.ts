@@ -1,9 +1,12 @@
 import { Server} from "socket.io";
 import { InputProvider } from "./inputProviders";
+import { predictBallY } from "./aiPlayer";
 
 const UNIT = 40; let counter = 0;
 
 type Side = 'leftPlayer' | 'rightPlayer';
+
+
 
 
 interface GameConstants
@@ -29,7 +32,8 @@ interface BallState
   bv: {x: number, y: number};
   points: { leftPlayer: number, rightPlayer: number };
   sets: { leftPlayer: number, rightPlayer: number };
-  usernames: {left: String, right: String}
+  usernames: {left: string, right: string}
+  py: number;
 }
 
 interface PaddleState
@@ -84,11 +88,10 @@ export class Game
   private isPaused = true;
   private lastUpdatedTime: number | undefined = undefined; /* ms */
 
-  private savedBallVelocity: { x: number; y: number } | null = null;
-
   private roomId: string;
   private io: Server;
   private interval!: NodeJS.Timeout | undefined;
+
 
 
   constructor( private leftInput: InputProvider, private rightInput: InputProvider, io: Server, roomId: string)
@@ -98,7 +101,7 @@ export class Game
         firstSpeedFactor: 0.18*UNIT,
         airResistanceFactor: 0.998,
         minimumSpeed: 0.18*UNIT,
-        maximumSpeed: 0.5*UNIT,
+        maximumSpeed: 0.4*UNIT,
         radius: 0.25*UNIT,
         speedIncreaseFactor: 1.7,
         firstPedalHit: 0,
@@ -328,13 +331,19 @@ public resumeGameLoop() {
 
    private exportBallState()
   {
+    let pyy = 0;
+      
+      if (typeof this.rightInput.getPy === 'function')
+       pyy = this.rightInput.getPy() / UNIT;
+  
        const ballState: BallState =
         {
           bp: { x: this.ball.position.x / UNIT, y : this.ball.position.y / UNIT},
           bv: {x: this.ball.velocity.x / UNIT, y : this.ball.velocity.y /UNIT},
           points: this.points,
           sets: this.sets,
-          usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()}
+          usernames: {left: this.leftInput.getUsername(), right: this.rightInput.getUsername()},
+          py: pyy
         };
 
         this.io.to(this.roomId).emit("ballUpdate", ballState);
@@ -371,7 +380,12 @@ public resumeGameLoop() {
 
 this.exportGameState();
     
+//this.leftInput.getSocket()!.on("disconnect", () => {
+//     
+//     });
     
+
+
      if (typeof this.leftInput.getSocket === 'function')
       {
         this.leftInput.getSocket()!.on("pause-resume", (data: {status: string}) =>
@@ -381,6 +395,9 @@ this.exportGameState();
         else if (data.status === "resume" && this.isPaused)
             this.resumeGameLoop();
         });
+
+        this.leftInput.getSocket()!.on("disconnect", () => {this.matchOver = true;  console.log("GELDİ, EVET, sol"); return;}); //bu varsa alttakine gerek yok, (window.reoload olduğu sürece)
+        this.leftInput.getSocket()!.on("reset-match", () => {return;});
       }
 
       if (typeof this.rightInput.getSocket === 'function')
@@ -392,6 +409,9 @@ this.exportGameState();
         else if (data.status === "resume" && this.isPaused)
             this.resumeGameLoop();
         });
+
+        this.rightInput.getSocket()!.on("disconnect", () => {this.matchOver = true; console.log("GELDİ, EVET, sağ"); return;}); //bu varsa alttakine gerek yok, (window.reoload olduğu sürece)
+        this.rightInput.getSocket()!.on("reset-match", () => {return;});
       }
 
 
@@ -401,16 +421,16 @@ this.exportGameState();
        }
 
 
-       if (typeof this.leftInput.getSocket === 'function')
-      {
-          this.leftInput.getSocket()!.on("reset-match", () => {return;});
-      }
+      //  if (typeof this.leftInput.getSocket === 'function')
+      // {
+      //     this.leftInput.getSocket()!.on("reset-match", () => {return;});
+      // }
 
 
-       if (typeof this.rightInput.getSocket === 'function')
-      {
-          this.rightInput.getSocket()!.on("reset-match", () => {return;});
-      }
+      //  if (typeof this.rightInput.getSocket === 'function')
+      // {
+      //     this.rightInput.getSocket()!.on("reset-match", () => {return;});
+      // }
 
 
 
@@ -448,8 +468,7 @@ this.exportGameState();
     this.ball.position.y += this.ball.velocity.y*timeDifferenceMultiplier;
 
     //pedal hareketi
-    //if (!this.isInputFrozen)
-    const upperBound = this.ground.height/2 - this.paddle1.height/2 + 2;
+    const upperBound = this.ground.height/2 - this.paddle1.height/2 + 40;
     const deltaY1 = this.leftInput.getPaddleDelta() * this.paddleSpeed;
     const deltaY2 = this.rightInput.getPaddleDelta() * this.paddleSpeed;
     if (Math.abs(this.paddle1.position.y + deltaY1) <= upperBound)
@@ -484,7 +503,7 @@ this.exportGameState();
       const offset = this.ball.position.y - this.paddle1.position.y;
       
       // 🎯 y yönüne ekstra açı ver
-      this.ball.velocity.y += offset * 0.05;
+      this.ball.velocity.y += offset * 0.03;
       if (this.ball.firstPedalHit++)
         {
           this.ball.speedIncreaseFactor = 1.2;
@@ -517,7 +536,7 @@ this.exportGameState();
       const offset = this.ball.position.y - this.paddle2.position.y;
       
       // 🎯 y yönüne ekstra açı ver
-      this.ball.velocity.y += offset * 0.05;
+      this.ball.velocity.y += offset * 0.03;
       // ilk pedal çarpmasından sonra topu çok hızlandır, daha sonra az arttır 
       if (this.ball.firstPedalHit++)
       {
@@ -528,6 +547,7 @@ this.exportGameState();
         // 🎯 HIZI ARTTIR
         this.ball.velocity.x *= this.ball.speedIncreaseFactor;
         this.ball.velocity.y *= this.ball.speedIncreaseFactor;
+        
     }
   
     

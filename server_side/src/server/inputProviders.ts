@@ -9,8 +9,9 @@ export interface InputProvider
    * Returns +1 for move up, -1 for move down, or 0 for no movement
    */
   getPaddleDelta(): number;
-  getUsername(): String;
+  getUsername(): string;
   getSocket?(): Socket;
+  getPy?(): number;
 }
 
 /**
@@ -35,9 +36,13 @@ export class RemotePlayerInput implements InputProvider
 
 export class AIPlayerInput implements InputProvider
 {
-  private username: String;
-  private level: String = "medium";
-  constructor(private readonly getGame: () => Game, private readonly getPaddle: () => Paddle, username: String, level: string)
+  private username: string;
+  private level: string = "medium";
+  private lastDecisionTime = 0;
+  private targetY = 0;
+  private timePassed = 0;
+
+  constructor(private readonly getGame: () => Game, private readonly getPaddle: () => Paddle, username: string, level: string)
   {
     this.username = username;
     this.level = level; /////Bunu işleyeceğiz ******************************************************************************************************************************************
@@ -52,23 +57,25 @@ export class AIPlayerInput implements InputProvider
     const paddle = this.getPaddle();
     const paddleSpeed = this.getGame().getPaddleSpeed();
 
-    const targetY = predictBallY(ball, groundWidth/2, paddle.height);
-    
-    const upperLimit = (groundHeight - paddle.height) / 2 + 5;
-    const diff = targetY - paddle.position.y;
+     const now = Date.now();
 
-     if(Math.abs(diff) < paddleSpeed)
-        return 0;
-    else
-    {
-        const nextY = paddle.position.y + paddleSpeed * Math.sign(targetY - paddle.position.y);
-        if (Math.abs(nextY) <= upperLimit)
-            return diff > 0 ? 1 : -1;
-        else return 0;
-    }
+    if (now - this.lastDecisionTime >= 1000) 
+      {
+        this.lastDecisionTime = now;
+        this.targetY = predictBallY(ball, groundWidth/2, paddle);
+        //this.timePassed = predictBallY(ball, groundWidth/2, paddle).timePassed;
+      }
+        
+    const diff = this.targetY - paddle.position.y;
+    //const time = Math.min(this.timePassed, 60); 
+    //if(Math.abs(diff) < paddleSpeed)
+       // return 0;
+    //else
+        return diff > 0 ? Math.abs(diff)/10 : -Math.abs(diff)/10;
   }
 
   getUsername() { return this.username; }
+  getPy() { return this.targetY;}
 }
 
 
@@ -76,9 +83,9 @@ export class LocalPlayerInput implements InputProvider
 {
   private delta = 0;
    private player: Player;
-   private side: String;
+   private side: string;
 
-  constructor(player : Player, side: String)
+  constructor(player : Player, side: string)
   {
     this.player = player;
     this.side = side;

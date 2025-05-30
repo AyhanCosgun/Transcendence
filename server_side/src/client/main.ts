@@ -1,4 +1,4 @@
-import { createCamera, createPaddles, createGround, createWalls, createScene} from "./gameScene";
+import { createCamera, createPaddles, createGround, createWalls, createScene, createPredictedBall} from "./gameScene";
 import {Mesh, Engine, Scene} from "@babylonjs/core";
 import { startGameLoop} from "./gameLoop"
 import { BallController } from "./ball";
@@ -24,6 +24,7 @@ let groundSizeRef: {width: number, height: number};
 let paddle1Ref: Mesh;
 let paddle2Ref: Mesh;
 let ballRef: BallController;
+//let predictedBallRef: Mesh;
 
 export let gameStatus : {currentGameStarted: boolean, game_mode: GameMode, level?: string};
 gameStatus = { currentGameStarted: false,  game_mode: null};
@@ -139,8 +140,11 @@ export function startGame(gameInfo: GameInfo)
     const { bottomWall, topWall } = createWalls(scene);
 
 
+    const predictedBall = createPredictedBall(scene, groundSizeRef.width/2);
+    //predictedBallRef = predictedBall;
+
     // 🎮 Oyun motoru döngüsü
-        startGameLoop(engine, scene, gameInfo);
+        startGameLoop(engine, scene, gameInfo, predictedBall);
 
     canvas.focus();
     console.log("gamestatus true oldu");
@@ -149,4 +153,4 @@ export function startGame(gameInfo: GameInfo)
 
 
 export { groundRef as ground,
-groundSizeRef as groundSize, paddle1Ref as paddle1, paddle2Ref as paddle2, ballRef as ball };
+groundSizeRef as groundSize, paddle1Ref as paddle1, paddle2Ref as paddle2, ballRef as ball};

@@ -61,6 +61,8 @@ io.on("connection", socket =>
       // });
 
     socket.on("disconnect", () => {
+    console.log(`disconnect geldi, ${socket.id} ayrıldı`);
+    //cancelOngoingMatch(socket);
     removePlayerFromQueue(player);
     players.delete(player.socket.id);
     });

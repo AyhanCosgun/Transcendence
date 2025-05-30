@@ -102,3 +102,19 @@ export function createWalls(scene: Scene)
 }
 
 
+export function createPredictedBall(scene: Scene, paddleX: number)
+{
+  const predictedBallSize = { width: 3, height: 0.2, depth: 0.5 };
+
+  const predictedBall = MeshBuilder.CreateBox("predictedBall", predictedBallSize, scene);
+  predictedBall.position.x = paddleX + 1.5; 
+  predictedBall.position.y = 0;
+
+  const predictedBallMaterial = new StandardMaterial("predictedBallMaterial", scene);
+  predictedBallMaterial.diffuseColor = new Color3(0, 0, 0.7);
+  predictedBallMaterial.emissiveColor = new Color3(0, 0, 0.5);
+  predictedBall.material =  predictedBallMaterial;
+
+  return predictedBall;
+
+}
